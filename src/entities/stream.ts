@@ -2,7 +2,7 @@ import {
   Column,
   Entity,
   JoinColumn,
-  ManyToOne,
+  OneToOne,
   PrimaryGeneratedColumn
 } from 'typeorm'
 import { Channel } from './channel.js'
@@ -19,7 +19,13 @@ export class Stream {
   @Column()
   messageId: number
 
-  @ManyToOne(() => Channel, (channel) => channel.streams)
+  @Column()
+  title: string
+
+  @Column()
+  game: string
+
+  @OneToOne(() => Channel, (channel) => channel.stream)
   @JoinColumn({ name: 'channelId' })
   channel: Relation<Channel>
 }

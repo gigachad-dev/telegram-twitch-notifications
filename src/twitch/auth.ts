@@ -6,11 +6,12 @@ import type { Tokens } from '../entities/token.js'
 
 export class AuthProvider {
   private readonly repository = database.getRepository(Token)
+  private _authProvider: RefreshingAuthProvider
 
-  async initialize(): Promise<RefreshingAuthProvider> {
+  async initialize(): Promise<void> {
     const tokens = await this.authTokens()
 
-    return new RefreshingAuthProvider(
+    this._authProvider = new RefreshingAuthProvider(
       {
         clientId: config.CLIENT_ID,
         clientSecret: config.CLIENT_SECRET,
@@ -18,6 +19,10 @@ export class AuthProvider {
       },
       tokens
     )
+  }
+
+  get provider(): RefreshingAuthProvider {
+    return this._authProvider
   }
 
   async getTokens(): Promise<Token | null> {
