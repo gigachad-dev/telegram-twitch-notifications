@@ -1,5 +1,6 @@
 import { Column, Entity, OneToOne, PrimaryGeneratedColumn } from 'typeorm'
 import { Stream } from './stream.js'
+import type { Relation } from 'typeorm'
 
 @Entity('channel')
 export class Channel {
@@ -16,5 +17,5 @@ export class Channel {
   topicId: number
 
   @OneToOne(() => Stream, (stream) => stream.channel)
-  stream: Stream
+  stream?: Relation<Stream>
 }

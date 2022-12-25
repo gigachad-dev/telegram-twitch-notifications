@@ -4,16 +4,12 @@ import { EventSub } from './twitch/eventsub.js'
 export class Server {
   private readonly server = Express()
 
+  constructor(private readonly eventsub: EventSub) {}
+
   async initialize() {
-    const eventsub = new EventSub()
-    await eventsub.initialize()
-    eventsub.middleware.apply(this.server)
-
-    eventsub.middleware.subscribeToStreamOnlineEvents
-    eventsub.middleware.subscribeToStreamOfflineEvents
-
+    this.eventsub.middleware.apply(this.server)
     this.server.listen(3003, async () => {
-      await eventsub.middleware.markAsReady()
+      await this.eventsub.middleware.markAsReady()
     })
   }
 }

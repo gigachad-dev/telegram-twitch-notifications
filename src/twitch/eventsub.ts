@@ -6,6 +6,7 @@ import Ngrok from 'ngrok'
 import { config } from '../config.js'
 import { database } from '../database.js'
 import { Channel, Stream } from '../entities/index.js'
+import { Repositories } from '../repositories.js'
 import type {
   EventSubStreamOfflineEvent,
   EventSubStreamOnlineEvent,
@@ -22,12 +23,8 @@ interface ChannelEvents {
 export class EventSub {
   private eventsub: EventSubMiddleware
   private readonly events = new Map<string, ChannelEvents>()
-  private readonly streamRepository = database.getRepository(Stream)
 
-  constructor(
-    private readonly bot: Bot<Context, Api<RawApi>>,
-    private readonly channelRepository: Repository<Channel>
-  ) {}
+  constructor(private readonly bot: Bot<Context, Api<RawApi>>) {}
 
   async initialize() {
     const authProvider = new ClientCredentialsAuthProvider(
@@ -36,6 +33,7 @@ export class EventSub {
     )
 
     const apiClient = new ApiClient({ authProvider })
+    await apiClient.eventSub.deleteAllSubscriptions()
 
     this.eventsub = new EventSubMiddleware({
       apiClient,
@@ -63,7 +61,7 @@ export class EventSub {
 
   private async onStreamOnline(event: EventSubStreamOnlineEvent) {
     const streamInfo = await event.getStream()
-    const channelEntity = await this.channelRepository.findOneBy({
+    const channelEntity = await Repositories.channel.findOneBy({
       channelId: streamInfo.id
     })
 
@@ -84,16 +82,28 @@ export class EventSub {
       streamThumbnailUrl,
       {
         caption: photoDescription,
-        message_thread_id: channelEntity.topicId
+        message_thread_id: channelEntity.topicId,
+        disable_notification: true
       }
     )
 
-    // TODO: upsert stream
+    await Repositories.stream.upsert(
+      {
+        channelId: channelEntity.channelId,
+        title: streamInfo.title,
+        game: streamInfo.gameName,
+        messageId: sendedMessage.message_id
+      },
+      {
+        conflictPaths: ['id', 'channelId'],
+        skipUpdateIfNoValuesChanged: true
+      }
+    )
   }
 
   private async onStreamOffline(event: EventSubStreamOfflineEvent) {
     const channelInfo = await event.getBroadcaster()
-    const channelEntity = await this.channelRepository.findOneBy({
+    const channelEntity = await Repositories.channel.findOneBy({
       channelId: channelInfo.id
     })
 
@@ -112,7 +122,7 @@ export class EventSub {
       }
     )
 
-    await this.streamRepository.delete({
+    await Repositories.stream.delete({
       channelId: channelEntity.channelId
     })
   }
@@ -124,12 +134,12 @@ export class EventSub {
     ended
   }: {
     title: string
-    game: string
+    game?: string
     username: string
     ended: boolean
   }) {
     return dedent`
-      ${ended ? '🔴' : '🟢'} ${title} — ${game}
+      ${ended ? '🔴' : '🟢'} ${title}${game ? ` — ${game}` : ''}
       https://twitch.tv/${username}
     `
   }

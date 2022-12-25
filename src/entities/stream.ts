@@ -1,6 +1,7 @@
 import {
   Column,
   Entity,
+  Index,
   JoinColumn,
   OneToOne,
   PrimaryGeneratedColumn
@@ -13,19 +14,23 @@ export class Stream {
   @PrimaryGeneratedColumn()
   id: number
 
-  @Column()
-  channelId: string
-
-  @Column()
-  messageId: number
-
-  @Column()
+  @Column('text')
   title: string
 
-  @Column()
+  @Column('text')
   game: string
 
-  @OneToOne(() => Channel, (channel) => channel.stream)
-  @JoinColumn({ name: 'channelId' })
-  channel: Relation<Channel>
+  @Column('integer')
+  messageId: number
+
+  @OneToOne(() => Channel, {
+    onDelete: 'SET NULL',
+    onUpdate: 'CASCADE'
+  })
+  @JoinColumn([{ name: 'tokenId', referencedColumnName: 'id' }])
+  channel?: Relation<Channel>
+
+  @Index()
+  @Column('text', { nullable: true })
+  channelId: string | null
 }

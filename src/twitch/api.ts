@@ -1,11 +1,11 @@
-import { ApiClient } from '@twurple/api'
-import type { RefreshingAuthProvider } from '@twurple/auth'
+import { ApiClient as TwitchApiClient } from '@twurple/api'
+import type { AuthProvider } from './auth.js'
 
-export class TwitchApiClient {
-  private readonly apiClient: ApiClient
+export class ApiClient {
+  private readonly apiClient: TwitchApiClient
 
-  constructor(authProvider: RefreshingAuthProvider) {
-    this.apiClient = new ApiClient({ authProvider })
+  constructor({ provider }: AuthProvider) {
+    this.apiClient = new TwitchApiClient({ authProvider: provider })
   }
 
   async getStreamById(userId: string) {

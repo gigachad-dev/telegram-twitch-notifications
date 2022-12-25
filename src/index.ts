@@ -2,26 +2,26 @@ import 'reflect-metadata'
 import { Bot } from 'grammy'
 import { config } from './config.js'
 import { database } from './database.js'
-import { Channel } from './entities/index.js'
 import { checkBotOwner } from './middlewares.js'
+import { Repositories } from './repositories.js'
 import { Server } from './server.js'
-import { AuthProvider, EventSub, TwitchApiClient } from './twitch/index.js'
+import { ApiClient, AuthProvider, EventSub } from './twitch/index.js'
 
 await database.initialize()
 await database.runMigrations()
-const channelRepository = database.getRepository(Channel)
 
 const bot = new Bot(config.BOT_TOKEN)
-const server = new Server()
-await server.initialize()
 
 const auth = new AuthProvider()
 await auth.initialize()
 
-const eventsub = new EventSub(bot, channelRepository)
+const eventsub = new EventSub(bot)
 await eventsub.initialize()
 
-const api = new TwitchApiClient(auth.provider)
+const server = new Server(eventsub)
+await server.initialize()
+
+const api = new ApiClient(auth)
 
 bot.use(checkBotOwner)
 
@@ -37,7 +37,7 @@ bot.command('subscribe', async (ctx) => {
       throw new Error(`Канал "${username}" не найден.`)
     }
 
-    const channelEntity = await channelRepository.findOneBy({
+    const channelEntity = await Repositories.channel.findOneBy({
       channelId: channelInfo.id
     })
 
@@ -47,7 +47,7 @@ bot.command('subscribe', async (ctx) => {
       )
     }
 
-    await channelRepository.insert({
+    await Repositories.channel.insert({
       channelId: channelInfo.id,
       displayName: channelInfo.displayName,
       topicId: ctx.message.message_thread_id
@@ -76,7 +76,7 @@ bot.command('unsubscribe', async (ctx) => {
       throw new Error(`Канал "${username}" не найден.`)
     }
 
-    const channelEntity = await channelRepository.findOneBy({
+    const channelEntity = await Repositories.channel.findOneBy({
       channelId: channelInfo.id
     })
 
@@ -86,7 +86,7 @@ bot.command('unsubscribe', async (ctx) => {
       )
     }
 
-    await channelRepository.delete({
+    await Repositories.channel.delete({
       id: channelEntity.id
     })
 
@@ -102,7 +102,7 @@ bot.command('unsubscribe', async (ctx) => {
 })
 
 bot.command('channels', async (ctx) => {
-  const channels = await channelRepository.find()
+  const channels = await Repositories.channel.find()
   const message = Object.values(channels).map((channel) => {
     return `*${channel.displayName}* — \`/unsubscribe ${channel.displayName}\``
   })
@@ -118,11 +118,17 @@ bot.command('channels', async (ctx) => {
 
 bot.start({
   async onStart() {
-    const channels = await channelRepository.find()
+    const channels = await Repositories.channel.find({
+      relations: {
+        stream: true
+      }
+    })
+
+    console.log(channels)
     for (const channel of channels) {
       if (!channel.stream) {
         const streamInfo = await api.getStreamById(channel.channelId)
-        if (streamInfo.type === 'live') {
+        if (streamInfo?.type === 'live') {
           eventsub.sendMessage(streamInfo, channel)
         }
       }
