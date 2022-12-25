@@ -105,26 +105,30 @@ bot.command('streamers', botTyping, async (ctx) => {
   })
 
   const users = await api.getUsersById(channels.map((channel) => channel.id))
-  const message = await Promise.all(
-    Object.values(users).reduce<any>(async (acc, channel) => {
+  const message = await Object.values(users).reduce<Promise<string[]>>(
+    async (acc, channel) => {
+      const arr = await acc
       const streamInfo = await channel.getStream()
       const channelLink = `[${channel.displayName}](https://twitch.tv/${channel.name})`
 
       if (streamInfo) {
-        acc.unshift(dedent`
-          ${channelLink} ${
-          streamInfo.type === 'live' ? `👀 ${streamInfo.viewers} ` : ''
-        }
-          ${streamInfo.title}${
-          streamInfo.gameName ? ` — ${streamInfo.gameName}` : ''
-        }\n
-        `)
+        arr.unshift(
+          dedent`
+            ${channelLink} ${
+            streamInfo.type === 'live' ? `👀 ${streamInfo.viewers} ` : ''
+          }
+            ${streamInfo.title}${
+            streamInfo.gameName ? ` — ${streamInfo.gameName}` : ''
+          }\n
+          `
+        )
         return acc
       }
 
-      acc.push(channelLink)
+      arr.push(channelLink)
       return acc
-    }, [])
+    },
+    Promise.resolve([])
   )
 
   ctx.reply(
@@ -132,7 +136,6 @@ bot.command('streamers', botTyping, async (ctx) => {
     {
       parse_mode: 'Markdown',
       disable_web_page_preview: true,
-      reply_to_message_id: ctx.message.message_id,
       message_thread_id: ctx.message.message_thread_id
     }
   )
