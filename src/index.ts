@@ -37,17 +37,14 @@ bot.command('add', async (ctx) => {
       throw new Error(`Канал "${username}" не найден.`)
     }
 
-    const channelEntity = await Repositories.channel.findOneBy({
-      id: channelInfo.id
-    })
-
+    const channelEntity = await Repositories.getChannel(channelInfo.id)
     if (channelEntity) {
       throw new Error(
         `Канал "${channelInfo.displayName}" уже имеет подписку на уведомления.`
       )
     }
 
-    await Repositories.channel.insert({
+    await Repositories.addChannel({
       id: channelInfo.id,
       topicId: ctx.message.message_thread_id
     })
@@ -75,21 +72,16 @@ bot.command('remove', async (ctx) => {
       throw new Error(`Канал "${username}" не найден.`)
     }
 
-    const channelEntity = await Repositories.channel.findOneBy({
-      id: channelInfo.id
-    })
-
+    const channelEntity = await Repositories.getChannel(channelInfo.id)
     if (!channelEntity) {
       throw new Error(
         `Канал "${channelInfo.displayName}" не имеет подписки на уведомления.`
       )
     }
 
-    await Repositories.channel.delete({
-      id: channelEntity.id
-    })
-
+    await Repositories.removeChannel(channelEntity.id)
     await eventsub.unsubscribeEvent(channelInfo.id)
+
     throw new Error(
       `Канал "${channelInfo.displayName}" отписан от уведомлений.`
     )

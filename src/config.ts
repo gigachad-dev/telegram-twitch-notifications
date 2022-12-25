@@ -1,5 +1,10 @@
-import 'dotenv/config'
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
+import dotenv from 'dotenv'
 import { cleanEnv, num, str } from 'envalid'
+
+const envPath = resolve(dirname(fileURLToPath(import.meta.url)), '..', '.env')
+dotenv.config({ path: envPath })
 
 export const config = cleanEnv(process.env, {
   BOT_TOKEN: str(),

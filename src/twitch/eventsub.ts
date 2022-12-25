@@ -64,9 +64,7 @@ export class EventSub {
 
   private async onStreamOnline(event: EventSubStreamOnlineEvent) {
     const streamInfo = await event.getStream()
-    const channelEntity = await Repositories.channel.findOneBy({
-      id: streamInfo.id
-    })
+    const channelEntity = await Repositories.getChannel(streamInfo.id)
 
     this.sendMessage(streamInfo, channelEntity)
   }
@@ -86,29 +84,21 @@ export class EventSub {
       {
         caption: photoDescription,
         message_thread_id: channelEntity.topicId,
-        disable_notification: true
+        disable_notification: config.isDev
       }
     )
 
-    await Repositories.stream.upsert(
-      {
-        channelId: channelEntity.id,
-        title: streamInfo.title,
-        game: streamInfo.gameName,
-        messageId: sendedMessage.message_id
-      },
-      {
-        conflictPaths: ['channelId'],
-        skipUpdateIfNoValuesChanged: true
-      }
-    )
+    await Repositories.addStream({
+      channelId: channelEntity.id,
+      title: streamInfo.title,
+      game: streamInfo.gameName,
+      messageId: sendedMessage.message_id
+    })
   }
 
   private async onStreamOffline(event: EventSubStreamOfflineEvent) {
     const channelInfo = await event.getBroadcaster()
-    const channelEntity = await Repositories.channel.findOneBy({
-      id: channelInfo.id
-    })
+    const channelEntity = await Repositories.getChannel(channelInfo.id)
 
     const photoDescription = this.generateDescription({
       game: channelEntity.stream.game,
@@ -129,9 +119,7 @@ export class EventSub {
       console.log(err)
     }
 
-    await Repositories.stream.delete({
-      messageId: channelEntity.stream.messageId
-    })
+    await Repositories.removeStream(channelEntity.id)
   }
 
   private generateDescription({
