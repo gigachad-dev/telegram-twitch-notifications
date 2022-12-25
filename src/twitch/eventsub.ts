@@ -87,6 +87,7 @@ export class EventSub {
       }
     )
 
+    // TODO: FIXME
     await Repositories.stream.upsert(
       {
         channelId: channelEntity.channelId,
@@ -95,7 +96,7 @@ export class EventSub {
         messageId: sendedMessage.message_id
       },
       {
-        conflictPaths: ['id', 'channelId'],
+        conflictPaths: ['channelId'],
         skipUpdateIfNoValuesChanged: true
       }
     )

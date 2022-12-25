@@ -14,23 +14,19 @@ export class Stream {
   @PrimaryGeneratedColumn()
   id: number
 
-  @Column('text')
+  @Column()
   title: string
 
-  @Column('text')
+  @Column()
   game: string
 
-  @Column('integer')
+  @Column()
   messageId: number
 
-  @OneToOne(() => Channel, {
-    onDelete: 'SET NULL',
-    onUpdate: 'CASCADE'
-  })
-  @JoinColumn([{ name: 'tokenId', referencedColumnName: 'id' }])
+  @OneToOne(() => Channel, (channel) => channel.stream)
+  @JoinColumn({ name: 'tokenId' })
   channel?: Relation<Channel>
 
-  @Index()
-  @Column('text', { nullable: true })
-  channelId: string | null
+  @Column()
+  channelId: string
 }
