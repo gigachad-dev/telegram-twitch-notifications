@@ -25,7 +25,7 @@ const api = new ApiClient(auth)
 
 bot.use(checkBotOwner)
 
-bot.command('subscribe', async (ctx) => {
+bot.command('add', async (ctx) => {
   try {
     const username = ctx.match
     if (!username) {
@@ -63,7 +63,7 @@ bot.command('subscribe', async (ctx) => {
   }
 })
 
-bot.command('unsubscribe', async (ctx) => {
+bot.command('remove', async (ctx) => {
   try {
     const username = ctx.match
     if (!username) {
@@ -108,16 +108,19 @@ bot.command('channels', async (ctx) => {
   })
 
   const users = await api.getUsersById(channels.map((channel) => channel.id))
-  const message = Object.values(users).map(async (channel) => {
-    const streamInfo = await channel.getStream()
-    const streamStatus = streamInfo?.type === 'live' ? '🟢' : '🔴'
-    return `${streamStatus} *[${channel.displayName}](https://twitch.tv/${channel.name})* — \`/unsubscribe ${channel.name}\``
-  })
+  const message = await Promise.all(
+    Object.values(users).map(async (channel) => {
+      const streamInfo = await channel.getStream()
+      const streamStatus = streamInfo?.type === 'live' ? '🟢' : '🔴'
+      return `${streamStatus} [${channel.displayName}](https://twitch.tv/${channel.name}) — \`/unsubscribe ${channel.name}\``
+    })
+  )
 
   ctx.reply(
     message.length ? message.join('\n') : 'Подписки на каналы отсутствуют.',
     {
       parse_mode: 'Markdown',
+      disable_web_page_preview: true,
       message_thread_id: ctx.message.message_thread_id
     }
   )

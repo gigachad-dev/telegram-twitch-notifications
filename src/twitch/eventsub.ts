@@ -117,13 +117,17 @@ export class EventSub {
       ended: true
     })
 
-    await this.bot.api.editMessageCaption(
-      config.CHAT_ID,
-      channelEntity.stream.messageId,
-      {
-        caption: photoDescription
-      }
-    )
+    try {
+      await this.bot.api.editMessageCaption(
+        config.CHAT_ID,
+        channelEntity.stream.messageId,
+        {
+          caption: photoDescription
+        }
+      )
+    } catch (err) {
+      console.log(err)
+    }
 
     await Repositories.stream.delete({
       messageId: channelEntity.stream.messageId
