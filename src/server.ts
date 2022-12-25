@@ -1,4 +1,5 @@
 import Express from 'express'
+import { config } from './config.js'
 import type { EventSub } from './twitch/eventsub.js'
 
 export class Server {
@@ -8,7 +9,7 @@ export class Server {
 
   async initialize() {
     this.eventsub.middleware.apply(this.server)
-    this.server.listen(3003, async () => {
+    this.server.listen(config.PORT, async () => {
       await this.eventsub.middleware.markAsReady()
     })
   }

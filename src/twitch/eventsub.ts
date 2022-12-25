@@ -152,7 +152,7 @@ export class EventSub {
 
     if (config.isDev) {
       await Ngrok.disconnect()
-      const tunnel = await Ngrok.connect(3003)
+      const tunnel = await Ngrok.connect(config.PORT)
       hostName = tunnel.replace('https://', '')
     } else {
       hostName = `eventsub.${config.HOSTNAME.replace('https://', '')}`

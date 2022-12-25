@@ -14,5 +14,6 @@ export const config = cleanEnv(process.env, {
   CLIENT_SECRET: str(),
   ACCESS_TOKEN: str(),
   REFRESH_TOKEN: str(),
-  HOSTNAME: str()
+  HOSTNAME: str(),
+  PORT: num()
 })
