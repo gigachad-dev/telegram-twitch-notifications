@@ -1,8 +1,9 @@
 import 'reflect-metadata'
+import dedent from 'dedent'
 import { Bot } from 'grammy'
 import { config } from './config.js'
 import { database } from './database.js'
-import { checkBotOwner } from './middlewares.js'
+import { botTyping, isOwner } from './middlewares.js'
 import { Repositories } from './repositories.js'
 import { Server } from './server.js'
 import { ApiClient, AuthProvider, EventSub } from './twitch/index.js'
@@ -11,6 +12,12 @@ await database.initialize()
 await database.runMigrations()
 
 const bot = new Bot(config.BOT_TOKEN)
+bot.api.setMyCommands([
+  {
+    command: 'streamers',
+    description: 'Получить список стримеров.'
+  }
+])
 
 const auth = new AuthProvider()
 await auth.initialize()
@@ -23,9 +30,7 @@ await server.initialize()
 
 const api = new ApiClient(auth)
 
-bot.use(checkBotOwner)
-
-bot.command('add', async (ctx) => {
+bot.command('add', isOwner, async (ctx) => {
   try {
     const username = ctx.match
     if (!username) {
@@ -60,7 +65,7 @@ bot.command('add', async (ctx) => {
   }
 })
 
-bot.command('remove', async (ctx) => {
+bot.command('remove', isOwner, async (ctx) => {
   try {
     const username = ctx.match
     if (!username) {
@@ -92,7 +97,7 @@ bot.command('remove', async (ctx) => {
   }
 })
 
-bot.command('channels', async (ctx) => {
+bot.command('streamers', botTyping, async (ctx) => {
   const channels = await Repositories.channel.find({
     select: {
       id: true
@@ -103,8 +108,18 @@ bot.command('channels', async (ctx) => {
   const message = await Promise.all(
     Object.values(users).map(async (channel) => {
       const streamInfo = await channel.getStream()
-      const streamStatus = streamInfo?.type === 'live' ? '🟢' : '🔴'
-      return `${streamStatus} [${channel.displayName}](https://twitch.tv/${channel.name}) — \`/remove ${channel.name}\``
+      const channelLink = `[${channel.displayName}](https://twitch.tv/${channel.name})`
+
+      if (streamInfo) {
+        return dedent`
+          ${streamInfo.type === 'live' ? `👀 ${streamInfo.viewers} ` : ''}
+          ${streamInfo.title}${
+          streamInfo.gameName ? ` — ${streamInfo.gameName}` : ''
+        }\n
+        `
+      }
+
+      return channelLink
     })
   )
 
@@ -113,6 +128,7 @@ bot.command('channels', async (ctx) => {
     {
       parse_mode: 'Markdown',
       disable_web_page_preview: true,
+      reply_to_message_id: ctx.message.message_id,
       message_thread_id: ctx.message.message_thread_id
     }
   )

@@ -43,7 +43,7 @@ export class EventSub {
     })
   }
 
-  get middleware() {
+  get middleware(): EventSubMiddleware {
     return this.eventsub
   }
 
@@ -62,14 +62,19 @@ export class EventSub {
     this.events.set(channelId, { onlineEvent, offlineEvent })
   }
 
-  private async onStreamOnline(event: EventSubStreamOnlineEvent) {
+  private async onStreamOnline(
+    event: EventSubStreamOnlineEvent
+  ): Promise<void> {
     const streamInfo = await event.getStream()
     const channelEntity = await Repositories.getChannel(streamInfo.id)
 
     this.sendMessage(streamInfo, channelEntity)
   }
 
-  async sendMessage(streamInfo: HelixStream, channelEntity: Channel) {
+  async sendMessage(
+    streamInfo: HelixStream,
+    channelEntity: Channel
+  ): Promise<void> {
     const streamThumbnailUrl = streamInfo.getThumbnailUrl(1920, 1080)
     const photoDescription = this.generateDescription({
       game: streamInfo.gameName,
@@ -96,7 +101,9 @@ export class EventSub {
     })
   }
 
-  private async onStreamOffline(event: EventSubStreamOfflineEvent) {
+  private async onStreamOffline(
+    event: EventSubStreamOfflineEvent
+  ): Promise<void> {
     const channelInfo = await event.getBroadcaster()
     const channelEntity = await Repositories.getChannel(channelInfo.id)
 
@@ -132,7 +139,7 @@ export class EventSub {
     game?: string
     username: string
     ended: boolean
-  }) {
+  }): string {
     return dedent`
       ${ended ? '🔴' : '🟢'} ${title}${game ? ` — ${game}` : ''}
       https://twitch.tv/${username}
@@ -147,7 +154,7 @@ export class EventSub {
     this.events.delete(channelId)
   }
 
-  private async getHostName() {
+  private async getHostName(): Promise<string> {
     let hostName = ''
 
     if (config.isDev) {
@@ -155,7 +162,7 @@ export class EventSub {
       const tunnel = await Ngrok.connect(config.PORT)
       hostName = tunnel.replace('https://', '')
     } else {
-      hostName = `eventsub.${config.HOSTNAME.replace('https://', '')}`
+      hostName = config.HOSTNAME.replace('https://', '')
     }
 
     return hostName

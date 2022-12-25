@@ -23,7 +23,7 @@ export class AuthProvider {
     return this._authProvider
   }
 
-  async getTokens() {
+  async getTokens(): Promise<Tokens | null> {
     const tokens = await Repositories.token
       .createQueryBuilder('token')
       .select('token')
@@ -41,7 +41,7 @@ export class AuthProvider {
     this.saveTokens(accessToken)
   }
 
-  private async authTokens() {
+  private async authTokens(): Promise<Tokens> {
     const initialTokens = {
       accessToken: config.ACCESS_TOKEN,
       refreshToken: config.REFRESH_TOKEN,
