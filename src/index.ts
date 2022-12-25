@@ -111,8 +111,10 @@ bot.command('streamers', botTyping, async (ctx) => {
       const channelLink = `[${channel.displayName}](https://twitch.tv/${channel.name})`
 
       if (streamInfo) {
-        return dedent`
-          ${streamInfo.type === 'live' ? `👀 ${streamInfo.viewers} ` : ''}
+        return dedent`\n
+          ${channelLink} ${
+          streamInfo.type === 'live' ? `👀 ${streamInfo.viewers} ` : ''
+        }
           ${streamInfo.title}${
           streamInfo.gameName ? ` — ${streamInfo.gameName}` : ''
         }\n
