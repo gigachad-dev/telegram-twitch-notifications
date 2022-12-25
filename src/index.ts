@@ -38,7 +38,7 @@ bot.command('subscribe', async (ctx) => {
     }
 
     const channelEntity = await Repositories.channel.findOneBy({
-      channelId: channelInfo.id
+      id: channelInfo.id
     })
 
     if (channelEntity) {
@@ -48,8 +48,7 @@ bot.command('subscribe', async (ctx) => {
     }
 
     await Repositories.channel.insert({
-      channelId: channelInfo.id,
-      displayName: channelInfo.displayName,
+      id: channelInfo.id,
       topicId: ctx.message.message_thread_id
     })
 
@@ -77,7 +76,7 @@ bot.command('unsubscribe', async (ctx) => {
     }
 
     const channelEntity = await Repositories.channel.findOneBy({
-      channelId: channelInfo.id
+      id: channelInfo.id
     })
 
     if (!channelEntity) {
@@ -102,9 +101,17 @@ bot.command('unsubscribe', async (ctx) => {
 })
 
 bot.command('channels', async (ctx) => {
-  const channels = await Repositories.channel.find()
-  const message = Object.values(channels).map((channel) => {
-    return `*${channel.displayName}* — \`/unsubscribe ${channel.displayName}\``
+  const channels = await Repositories.channel.find({
+    select: {
+      id: true
+    }
+  })
+
+  const users = await api.getUsersById(channels.map((channel) => channel.id))
+  const message = Object.values(users).map(async (channel) => {
+    const streamInfo = await channel.getStream()
+    const streamStatus = streamInfo?.type === 'live' ? '🟢' : '🔴'
+    return `${streamStatus} *[${channel.displayName}](https://twitch.tv/${channel.name})* — \`/unsubscribe ${channel.name}\``
   })
 
   ctx.reply(
@@ -124,16 +131,15 @@ bot.start({
       }
     })
 
-    console.log(channels)
     for (const channel of channels) {
       if (!channel.stream) {
-        const streamInfo = await api.getStreamById(channel.channelId)
+        const streamInfo = await api.getStreamById(channel.id)
         if (streamInfo?.type === 'live') {
           eventsub.sendMessage(streamInfo, channel)
         }
       }
 
-      await eventsub.subscribeEvent(channel.channelId)
+      await eventsub.subscribeEvent(channel.id)
     }
   }
 })

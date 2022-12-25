@@ -1,5 +1,5 @@
 import Express from 'express'
-import { EventSub } from './twitch/eventsub.js'
+import type { EventSub } from './twitch/eventsub.js'
 
 export class Server {
   private readonly server = Express()

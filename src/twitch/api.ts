@@ -15,4 +15,8 @@ export class ApiClient {
   async getChannelByName(name: string) {
     return await this.apiClient.users.getUserByName(name)
   }
+
+  async getUsersById(userIds: string[]) {
+    return await this.apiClient.users.getUsersByIds(userIds)
+  }
 }

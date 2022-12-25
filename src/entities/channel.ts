@@ -1,17 +1,11 @@
-import { Column, Entity, OneToOne, PrimaryGeneratedColumn } from 'typeorm'
+import { Column, Entity, OneToOne, PrimaryColumn } from 'typeorm'
 import { Stream } from './stream.js'
 import type { Relation } from 'typeorm'
 
 @Entity('channel')
 export class Channel {
-  @PrimaryGeneratedColumn()
-  id: number
-
-  @Column({ unique: true })
-  channelId: string
-
-  @Column({ unique: true })
-  displayName: string
+  @PrimaryColumn({ unique: true })
+  id: string
 
   @Column()
   topicId: number

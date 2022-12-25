@@ -1,19 +1,18 @@
-import { ApiClient, HelixStream } from '@twurple/api'
+import { ApiClient } from '@twurple/api'
 import { ClientCredentialsAuthProvider } from '@twurple/auth'
 import { EventSubMiddleware } from '@twurple/eventsub'
 import dedent from 'dedent'
 import Ngrok from 'ngrok'
 import { config } from '../config.js'
-import { database } from '../database.js'
-import { Channel, Stream } from '../entities/index.js'
 import { Repositories } from '../repositories.js'
+import type { Channel } from '../entities/index.js'
+import type { HelixStream } from '@twurple/api'
 import type {
   EventSubStreamOfflineEvent,
   EventSubStreamOnlineEvent,
   EventSubSubscription
 } from '@twurple/eventsub'
 import type { Api, Bot, Context, RawApi } from 'grammy'
-import type { Repository } from 'typeorm'
 
 interface ChannelEvents {
   onlineEvent: EventSubSubscription<unknown>
@@ -44,6 +43,10 @@ export class EventSub {
     })
   }
 
+  get middleware() {
+    return this.eventsub
+  }
+
   async subscribeEvent(channelId: string): Promise<void> {
     if (this.events.has(channelId)) return
     const onlineEvent = await this.eventsub.subscribeToStreamOnlineEvents(
@@ -62,7 +65,7 @@ export class EventSub {
   private async onStreamOnline(event: EventSubStreamOnlineEvent) {
     const streamInfo = await event.getStream()
     const channelEntity = await Repositories.channel.findOneBy({
-      channelId: streamInfo.id
+      id: streamInfo.id
     })
 
     this.sendMessage(streamInfo, channelEntity)
@@ -87,10 +90,9 @@ export class EventSub {
       }
     )
 
-    // TODO: FIXME
     await Repositories.stream.upsert(
       {
-        channelId: channelEntity.channelId,
+        channelId: channelEntity.id,
         title: streamInfo.title,
         game: streamInfo.gameName,
         messageId: sendedMessage.message_id
@@ -105,13 +107,13 @@ export class EventSub {
   private async onStreamOffline(event: EventSubStreamOfflineEvent) {
     const channelInfo = await event.getBroadcaster()
     const channelEntity = await Repositories.channel.findOneBy({
-      channelId: channelInfo.id
+      id: channelInfo.id
     })
 
     const photoDescription = this.generateDescription({
       game: channelEntity.stream.game,
       title: channelEntity.stream.title,
-      username: channelEntity.displayName,
+      username: channelInfo.displayName,
       ended: true
     })
 
@@ -124,7 +126,7 @@ export class EventSub {
     )
 
     await Repositories.stream.delete({
-      channelId: channelEntity.channelId
+      messageId: channelEntity.stream.messageId
     })
   }
 
@@ -151,10 +153,6 @@ export class EventSub {
     await events.onlineEvent.stop()
     await events.offlineEvent.stop()
     this.events.delete(channelId)
-  }
-
-  get middleware() {
-    return this.eventsub
   }
 
   private async getHostName() {

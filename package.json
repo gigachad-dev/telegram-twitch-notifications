@@ -8,7 +8,7 @@
     "dev": "nodemon",
     "build": "rm -rf dist && tsc",
     "format": "prettier --write --ignore-unknown **",
-    "migration:generate": "node scripts/generateMigration.js"
+    "migration:generate": "node scripts/migration.js"
   },
   "devDependencies": {
     "@crashmax/prettier-config": "^2.2.1",

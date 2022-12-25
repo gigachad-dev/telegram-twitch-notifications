@@ -15,6 +15,7 @@ const {
 })
 
 if (!name) {
+  console.log('Option (-n, --name <migration_name>) argument missing')
   process.exit(1)
 }
 

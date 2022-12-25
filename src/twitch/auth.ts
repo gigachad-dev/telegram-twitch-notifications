@@ -1,7 +1,7 @@
 import { accessTokenIsExpired, RefreshingAuthProvider } from '@twurple/auth'
 import { config } from '../config.js'
 import { Repositories } from '../repositories.js'
-import type { Token, Tokens } from '../entities/token.js'
+import type { Tokens } from '../entities/token.js'
 
 export class AuthProvider {
   private _authProvider: RefreshingAuthProvider
@@ -23,7 +23,7 @@ export class AuthProvider {
     return this._authProvider
   }
 
-  async getTokens(): Promise<Token | null> {
+  async getTokens() {
     const tokens = await Repositories.token
       .createQueryBuilder('token')
       .select('token')

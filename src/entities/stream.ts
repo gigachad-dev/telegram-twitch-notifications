@@ -1,7 +1,6 @@
 import {
   Column,
   Entity,
-  Index,
   JoinColumn,
   OneToOne,
   PrimaryGeneratedColumn
@@ -24,7 +23,7 @@ export class Stream {
   messageId: number
 
   @OneToOne(() => Channel, (channel) => channel.stream)
-  @JoinColumn({ name: 'tokenId' })
+  @JoinColumn({ name: 'channelId' })
   channel?: Relation<Channel>
 
   @Column()
