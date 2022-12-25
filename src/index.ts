@@ -112,7 +112,7 @@ bot.command('channels', async (ctx) => {
     Object.values(users).map(async (channel) => {
       const streamInfo = await channel.getStream()
       const streamStatus = streamInfo?.type === 'live' ? '🟢' : '🔴'
-      return `${streamStatus} [${channel.displayName}](https://twitch.tv/${channel.name}) — \`/unsubscribe ${channel.name}\``
+      return `${streamStatus} [${channel.displayName}](https://twitch.tv/${channel.name}) — \`/remove ${channel.name}\``
     })
   )
 
