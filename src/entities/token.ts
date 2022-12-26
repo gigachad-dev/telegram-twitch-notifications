@@ -2,20 +2,20 @@ import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm'
 
 @Entity('token')
 export class Token {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn('uuid')
   id: number
 
-  @Column()
+  @Column('text')
   accessToken: string
 
-  @Column()
+  @Column('text')
   refreshToken: string
 
-  @Column()
+  @Column('integer')
   expiresIn: number
 
-  @Column()
-  obtainmentTimestamp: number
+  @Column('timestamp')
+  obtainmentTimestamp: Date
 }
 
 export type Tokens = Omit<Token, 'id'>

@@ -1,4 +1,8 @@
-import { accessTokenIsExpired, RefreshingAuthProvider } from '@twurple/auth'
+import {
+  AccessToken,
+  accessTokenIsExpired,
+  RefreshingAuthProvider
+} from '@twurple/auth'
 import { config } from '../config.js'
 import { Repositories } from '../repositories.js'
 import type { Tokens } from '../entities/token.js'
@@ -33,15 +37,16 @@ export class AuthProvider {
     return tokens
   }
 
-  async saveTokens(tokens: Tokens): Promise<void> {
+  private async onRefreshToken(accessToken: AccessToken): Promise<void> {
+    const tokens = {
+      ...accessToken,
+      obtainmentTimestamp: new Date(accessToken.obtainmentTimestamp)
+    }
+
     await Repositories.token.save(tokens)
   }
 
-  private onRefreshToken(accessToken: Tokens): void {
-    this.saveTokens(accessToken)
-  }
-
-  private async authTokens(): Promise<Tokens> {
+  private async authTokens() {
     const initialTokens = {
       accessToken: config.ACCESS_TOKEN,
       refreshToken: config.REFRESH_TOKEN,
@@ -51,13 +56,15 @@ export class AuthProvider {
 
     const tokensFromDb = await this.getTokens()
     if (tokensFromDb) {
-      const tokensIsExpired = accessTokenIsExpired(tokensFromDb)
+      const obtainmentTimestamp = tokensFromDb.obtainmentTimestamp.getTime()
+      const tokens = { ...tokensFromDb, obtainmentTimestamp }
+      const tokensIsExpired = accessTokenIsExpired(tokens)
 
       if (tokensIsExpired) {
         return initialTokens
       }
 
-      return tokensFromDb
+      return tokens
     }
 
     return initialTokens

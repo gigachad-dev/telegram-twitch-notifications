@@ -4,10 +4,10 @@ import type { Relation } from 'typeorm'
 
 @Entity('channel')
 export class Channel {
-  @PrimaryColumn({ unique: true })
+  @PrimaryColumn('text', { unique: true })
   id: string
 
-  @Column()
+  @Column('integer')
   topicId: number
 
   @OneToOne(() => Stream, (stream) => stream.channel)

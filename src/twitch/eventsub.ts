@@ -79,13 +79,13 @@ export class EventSub {
     const photoDescription = this.generateDescription({
       game: streamInfo.gameName,
       title: streamInfo.title,
-      username: streamInfo.userName,
+      username: streamInfo.userDisplayName,
       ended: false
     })
 
     const sendedMessage = await this.bot.api.sendPhoto(
       config.CHAT_ID,
-      streamThumbnailUrl,
+      `${streamThumbnailUrl}?timestamp=${Date.now()}`,
       {
         caption: photoDescription,
         message_thread_id: channelEntity.topicId,
@@ -93,7 +93,7 @@ export class EventSub {
       }
     )
 
-    await Repositories.addStream({
+    await Repositories.upsertStream({
       channelId: channelEntity.id,
       title: streamInfo.title,
       game: streamInfo.gameName,
@@ -122,11 +122,14 @@ export class EventSub {
           caption: photoDescription
         }
       )
-    } catch (err) {
-      console.log(err)
+    } catch {
+      console.log(dedent`
+        displayName: ${channelInfo.displayName}
+        messageId: ${channelEntity.stream.messageId}
+      `)
     }
 
-    await Repositories.removeStream(channelEntity.id)
+    await Repositories.deleteStream(channelEntity.id)
   }
 
   private generateDescription({
@@ -141,8 +144,8 @@ export class EventSub {
     ended: boolean
   }): string {
     return dedent`
-      ${ended ? '🔴' : '🟢'} ${title}${game ? ` — ${game}` : ''}
-      https://twitch.tv/${username}
+      ${ended ? '🔴' : '🟢'} ${title ?? username}${game ? ` — ${game}` : ''}
+      https://twitch.tv/${username.toLowerCase()}
     `
   }
 

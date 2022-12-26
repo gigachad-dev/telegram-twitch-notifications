@@ -7,6 +7,7 @@ const envPath = resolve(dirname(fileURLToPath(import.meta.url)), '..', '.env')
 dotenv.config({ path: envPath })
 
 export const config = cleanEnv(process.env, {
+  DATABASE_URL: str(),
   BOT_TOKEN: str(),
   BOT_OWNER_ID: num(),
   CHAT_ID: str(),

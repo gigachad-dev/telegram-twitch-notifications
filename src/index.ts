@@ -65,7 +65,7 @@ bot.command('add', isOwner, async (ctx) => {
   }
 })
 
-bot.command('remove', isOwner, async (ctx) => {
+bot.command(['delete', 'remove'], isOwner, async (ctx) => {
   try {
     const username = ctx.match
     if (!username) {
@@ -84,7 +84,7 @@ bot.command('remove', isOwner, async (ctx) => {
       )
     }
 
-    await Repositories.removeChannel(channelEntity.id)
+    await Repositories.deleteChannel(channelEntity.id)
     await eventsub.unsubscribeEvent(channelInfo.id)
 
     throw new Error(
@@ -97,7 +97,7 @@ bot.command('remove', isOwner, async (ctx) => {
   }
 })
 
-bot.command('streamers', botTyping, async (ctx) => {
+bot.command(['channels', 'streamers'], botTyping, async (ctx) => {
   const channels = await Repositories.channel.find({
     select: {
       id: true
@@ -142,6 +142,7 @@ bot.command('streamers', botTyping, async (ctx) => {
 })
 
 bot.start({
+  allowed_updates: ['chat_member', 'message'],
   async onStart() {
     const channels = await Repositories.channel.find({
       relations: {

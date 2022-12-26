@@ -6,24 +6,34 @@ export class Repositories {
   static stream = database.getRepository(Stream)
   static token = database.getRepository(Token)
 
-  static async removeChannel(id: string) {
-    await this.removeStream(id)
+  static async deleteChannel(id: string) {
     await this.channel.delete({ id })
   }
 
   static async getChannel(id: string) {
-    return await Repositories.channel.findOneBy({ id })
+    return await Repositories.channel.findOne({
+      where: { id },
+      select: {
+        id: true,
+        topicId: true,
+        stream: {
+          game: true,
+          title: true,
+          messageId: true
+        }
+      }
+    })
   }
 
   static async addChannel({ id, topicId }: Channel) {
     await this.channel.insert({ id, topicId })
   }
 
-  static async removeStream(id: string) {
+  static async deleteStream(id: string) {
     await this.stream.delete({ channelId: id })
   }
 
-  static async addStream({
+  static async upsertStream({
     channelId,
     title,
     game,
@@ -32,9 +42,9 @@ export class Repositories {
     await this.stream.upsert(
       {
         channelId,
-        title,
-        game,
-        messageId
+        messageId,
+        title: title || null,
+        game: game || null
       },
       {
         conflictPaths: ['channelId'],

@@ -10,22 +10,24 @@ import type { Relation } from 'typeorm'
 
 @Entity('stream')
 export class Stream {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn('uuid')
   id: number
 
-  @Column()
+  @Column('text', { nullable: true })
   title: string
 
-  @Column()
+  @Column('text', { nullable: true })
   game: string
 
-  @Column()
+  @Column('integer')
   messageId: number
 
-  @OneToOne(() => Channel, (channel) => channel.stream)
+  @OneToOne(() => Channel, (channel) => channel.stream, {
+    onDelete: 'CASCADE'
+  })
   @JoinColumn({ name: 'channelId' })
   channel?: Relation<Channel>
 
-  @Column()
+  @Column('text')
   channelId: string
 }
