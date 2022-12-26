@@ -13,14 +13,8 @@ export class Repositories {
   static async getChannel(id: string) {
     return await Repositories.channel.findOne({
       where: { id },
-      select: {
-        id: true,
-        topicId: true,
-        stream: {
-          game: true,
-          title: true,
-          messageId: true
-        }
+      relations: {
+        stream: true
       }
     })
   }
