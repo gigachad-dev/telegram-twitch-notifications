@@ -10,7 +10,7 @@ import type { Relation } from 'typeorm'
 
 @Entity('stream')
 export class Stream {
-  @PrimaryGeneratedColumn('uuid')
+  @PrimaryGeneratedColumn()
   id: number
 
   @Column('text', { nullable: true })
