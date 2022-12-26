@@ -28,13 +28,14 @@ export class AuthProvider {
   }
 
   async getTokens(): Promise<Tokens | null> {
-    const tokens = await Repositories.token
-      .createQueryBuilder('token')
-      .select('token')
-      .orderBy({ 'token.id': 'DESC' })
-      .getOne()
+    const tokens = await Repositories.token.find({
+      order: {
+        id: 'DESC'
+      },
+      take: 1
+    })
 
-    return tokens
+    return tokens[0]
   }
 
   private async onRefreshToken(accessToken: AccessToken): Promise<void> {
@@ -54,17 +55,17 @@ export class AuthProvider {
       obtainmentTimestamp: 0
     }
 
-    const tokensFromDb = await this.getTokens()
-    if (tokensFromDb) {
-      const obtainmentTimestamp = tokensFromDb.obtainmentTimestamp.getTime()
-      const tokens = { ...tokensFromDb, obtainmentTimestamp }
-      const tokensIsExpired = accessTokenIsExpired(tokens)
-
-      if (tokensIsExpired) {
-        return initialTokens
+    const currentTokens = await this.getTokens()
+    if (currentTokens) {
+      const parsedTokens = {
+        ...currentTokens,
+        obtainmentTimestamp: currentTokens.obtainmentTimestamp.getTime()
       }
 
-      return tokens
+      const tokensIsExpired = accessTokenIsExpired(parsedTokens)
+      if (tokensIsExpired) return initialTokens
+
+      return parsedTokens
     }
 
     return initialTokens

@@ -142,7 +142,7 @@ bot.command(['channels', 'streamers'], botTyping, async (ctx) => {
 })
 
 bot.start({
-  allowed_updates: ['chat_member', 'message'],
+  allowed_updates: ['message'],
   async onStart() {
     const channels = await Repositories.channel.find({
       relations: {

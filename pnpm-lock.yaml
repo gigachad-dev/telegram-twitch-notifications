@@ -29,7 +29,6 @@ dependencies:
   '@twurple/api': 5.2.7_@twurple+auth@5.2.7
   '@twurple/auth': 5.2.7
   '@twurple/eventsub': 5.2.7_@twurple+api@5.2.7
-  '@types/dedent': 0.7.0
   dedent: 0.7.0
   dotenv: 16.0.3
   envalid: 7.3.1
@@ -43,6 +42,7 @@ dependencies:
 devDependencies:
   '@crashmax/prettier-config': 2.2.1_za6dmrbiogn3z6m2plsv3qsi6m
   '@crashmax/tsconfig': 1.0.2
+  '@types/dedent': 0.7.0
   '@types/express': 4.17.15
   '@types/node': 18.11.17
   cross-env: 7.0.3
@@ -613,7 +613,7 @@ packages:
 
   /@types/dedent/0.7.0:
     resolution: {integrity: sha512-EGlKlgMhnLt/cM4DbUSafFdrkeJoC9Mvnj0PUCU7tFmTjMjNRT957kXCx0wYm3JuEq4o4ZsS5vG+NlkM2DMd2A==}
-    dev: false
+    dev: true
 
   /@types/express-serve-static-core/4.17.31:
     resolution: {integrity: sha512-DxMhY+NAsTwMMFHBTtJFNp5qiHKJ7TeqOo23zVEM9alT1Ml27Q3xcTH0xwxn7Q0BbMcVEJOs/7aQtUWupUQN3Q==}

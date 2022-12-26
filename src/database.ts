@@ -6,5 +6,5 @@ export const database = new DataSource({
   type: 'postgres',
   url: config.DATABASE_URL,
   entities: Object.values(entities),
-  migrations: ['src/migrations/*.ts']
+  migrations: [config.isDev ? 'src/migrations/*.ts' : 'dist/migrations/*.js']
 })

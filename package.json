@@ -13,6 +13,7 @@
   "devDependencies": {
     "@crashmax/prettier-config": "^2.2.1",
     "@crashmax/tsconfig": "^1.0.2",
+    "@types/dedent": "^0.7.0",
     "@types/express": "^4.17.15",
     "@types/node": "^18.11.17",
     "cross-env": "^7.0.3",
@@ -31,7 +32,6 @@
     "@twurple/api": "^5.2.7",
     "@twurple/auth": "^5.2.7",
     "@twurple/eventsub": "^5.2.7",
-    "@types/dedent": "^0.7.0",
     "dedent": "^0.7.0",
     "dotenv": "^16.0.3",
     "envalid": "^7.3.1",
