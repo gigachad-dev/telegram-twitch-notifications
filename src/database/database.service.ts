@@ -15,7 +15,7 @@ export class DatabaseService {
     this.token = this.database.getRepository(Token)
   }
 
-  async initialize() {
+  async init() {
     await this.database.initialize()
     await this.database.runMigrations()
   }

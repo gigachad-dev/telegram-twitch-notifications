@@ -31,7 +31,7 @@ export class EventSubService {
     private readonly telegramService: TelegramService
   ) {}
 
-  async initialize(): Promise<void> {
+  async init(): Promise<void> {
     const { clientId, clientSecret } = this.configService.twitchTokens
     const authProvider = new ClientCredentialsAuthProvider(
       clientId,

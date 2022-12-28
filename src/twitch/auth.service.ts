@@ -17,7 +17,7 @@ export class AuthService {
     private readonly databaseService: DatabaseService
   ) {}
 
-  async initialize(): Promise<void> {
+  async init(): Promise<void> {
     const { clientId, clientSecret } = this.configService.twitchTokens
     const tokens = await this.authTokens()
 

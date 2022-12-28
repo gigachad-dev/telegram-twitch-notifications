@@ -17,7 +17,7 @@ export class TelegramCommands {
     private readonly eventSubService: EventSubService
   ) {}
 
-  async initialize(): Promise<void> {
+  async init(): Promise<void> {
     await this.telegramService.api.setMyCommands([
       {
         command: 'streams',
