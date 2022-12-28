@@ -6,15 +6,13 @@ import type { Context, NextFunction } from 'grammy'
 export class TelegramMiddleware {
   constructor(private readonly configService: ConfigService) {}
 
-  async isOwner(ctx: Context, next: NextFunction): Promise<void> {
-    if (!ctx.message?.is_topic_message) return
-    if (ctx.from!.id !== this.configService.telegramTokens.botOwnerId) return
+  async isForum(ctx: Context, next: Function): Promise<void> {
+    if (ctx.message?.chat.type === 'supergroup' && !ctx.message.chat.is_forum) return
     await next()
   }
 
-  async botTyping(ctx: Context, next: NextFunction): Promise<void> {
-    if (!ctx.message?.is_topic_message) return
-    await ctx.replyWithChatAction('typing')
+  async isOwner(ctx: Context, next: NextFunction): Promise<void> {
+    if (ctx.from!.id !== this.configService.telegramTokens.botOwnerId) return
     await next()
   }
 }

@@ -39,7 +39,7 @@ export class TelegramCommands {
 
     this.telegramService.command(
       ['streams', 'channels'],
-      (ctx, next) => this.telegramMiddleware.botTyping(ctx, next),
+      (ctx, next) => this.telegramMiddleware.isForum(ctx, next),
       (ctx) => this.streamsCommand(ctx)
     )
 
