@@ -31,7 +31,6 @@
   "dependencies": {
     "@twurple/api": "^5.3.0",
     "@twurple/auth": "^5.3.0",
-    "@twurple/eventsub": "^5.3.0",
     "@twurple/eventsub-http": "^5.3.0",
     "dedent": "^0.7.0",
     "dotenv": "^16.0.3",

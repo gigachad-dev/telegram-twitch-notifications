@@ -5,7 +5,6 @@ specifiers:
   '@crashmax/tsconfig': ^1.0.2
   '@twurple/api': ^5.3.0
   '@twurple/auth': ^5.3.0
-  '@twurple/eventsub': ^5.3.0
   '@twurple/eventsub-http': ^5.3.0
   '@types/dedent': ^0.7.0
   '@types/express': ^4.17.15
@@ -30,7 +29,6 @@ specifiers:
 dependencies:
   '@twurple/api': 5.3.0_@twurple+auth@5.3.0
   '@twurple/auth': 5.3.0
-  '@twurple/eventsub': 5.3.0_@twurple+api@5.3.0
   '@twurple/eventsub-http': 5.3.0_@twurple+api@5.3.0
   dedent: 0.7.0
   dotenv: 16.0.3
@@ -606,15 +604,6 @@ packages:
       httpanda: 0.4.6
       tslib: 2.4.1
     transitivePeerDependencies:
-      - encoding
-    dev: false
-
-  /@twurple/eventsub/5.3.0_@twurple+api@5.3.0:
-    resolution: {integrity: sha512-QRDw9JEIbEFAfqp1IxTF4iZV/iWmjEuOs5OTrzN3rP/a2y1MexPr1dw00OE2Ivv5wsjpc1PKDUgNvhmbw4m3qQ==}
-    dependencies:
-      '@twurple/eventsub-http': 5.3.0_@twurple+api@5.3.0
-    transitivePeerDependencies:
-      - '@twurple/api'
       - encoding
     dev: false
 
