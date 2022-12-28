@@ -13,9 +13,8 @@ export class ExpressService {
   ) {}
 
   async init(): Promise<void> {
-    const { port, hostname } = this.configService.serverConfig
     this.eventSubService.middleware.apply(this.server)
-    this.server.listen(port, hostname, async () => {
+    this.server.listen(this.configService.serverConfig.port, async () => {
       await this.eventSubService.middleware.markAsReady()
     })
   }
