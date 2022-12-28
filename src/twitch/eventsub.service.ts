@@ -39,7 +39,6 @@ export class EventSubService {
     )
 
     const apiClient = new ApiClient({ authProvider })
-    await apiClient.eventSub.deleteAllSubscriptions()
 
     this.eventsub = new EventSubMiddleware({
       apiClient,
@@ -48,6 +47,8 @@ export class EventSubService {
       strictHostCheck: true,
       secret: clientSecret
     })
+
+    await apiClient.eventSub.deleteAllSubscriptions()
   }
 
   get middleware(): EventSubMiddleware {

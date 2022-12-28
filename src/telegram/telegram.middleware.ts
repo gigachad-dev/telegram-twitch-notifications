@@ -7,7 +7,8 @@ export class TelegramMiddleware {
   constructor(private readonly configService: ConfigService) {}
 
   async isForum(ctx: Context, next: Function): Promise<void> {
-    if (ctx.message?.chat.type === 'supergroup' && !ctx.message.chat.is_forum) return
+    if (ctx.message?.chat.type === 'supergroup' && !ctx.message.chat.is_forum)
+      return
     await next()
   }
 

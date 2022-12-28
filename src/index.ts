@@ -26,7 +26,6 @@ class App {
     await this.apiService.init()
     await this.eventSubService.init()
     await this.expressService.init()
-    await this.telegramCommands.init()
 
     if (!this.configService.isDev) {
       const { hostname, port } = this.configService.serverConfig
