@@ -1,6 +1,6 @@
 import { ApiClient } from '@twurple/api'
 import { ClientCredentialsAuthProvider } from '@twurple/auth'
-import { EventSubMiddleware } from '@twurple/eventsub'
+import { EventSubMiddleware } from '@twurple/eventsub-http'
 import dedent from 'dedent'
 import Ngrok from 'ngrok'
 import { singleton } from 'tsyringe'

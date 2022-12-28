@@ -18,19 +18,14 @@ class App {
 
   async initialize(): Promise<void> {
     await this.databaseService.init()
-    console.log('Init databaseService')
-
     await this.authService.init()
-    console.log('Init authService')
-
     await this.eventSubService.init()
-    console.log('Init eventSubService')
-
     await this.telegramCommands.init()
-    console.log('Init telegramCommands')
 
-    const { hostname, port } = this.configService.serverConfig
-    console.log(`Started ${hostname} with ${port} port`)
+    if (!this.configService.isDev) {
+      const { hostname, port } = this.configService.serverConfig
+      console.log(`Started ${hostname} with ${port} port`)
+    }
   }
 }
 
