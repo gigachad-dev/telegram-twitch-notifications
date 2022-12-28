@@ -2,7 +2,7 @@
   "extends": "@crashmax/tsconfig",
   "compilerOptions": {
     "outDir": "dist",
-    "strictNullChecks": false,
+    "strictNullChecks": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true
   },

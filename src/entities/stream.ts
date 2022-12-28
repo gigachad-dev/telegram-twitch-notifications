@@ -14,10 +14,10 @@ export class Stream {
   id: number
 
   @Column('text', { nullable: true })
-  title: string
+  title: string | null
 
   @Column('text', { nullable: true })
-  game: string
+  game: string | null
 
   @Column('integer')
   messageId: number
