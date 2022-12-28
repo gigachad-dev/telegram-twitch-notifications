@@ -85,7 +85,7 @@ export class EventSubService {
     event: EventSubStreamOnlineEvent
   ): Promise<void> {
     const streamInfo = await event.getStream()
-    const channelEntity = await this.databaseService.getChannel(streamInfo.id)
+    const channelEntity = await this.databaseService.getChannel(streamInfo.userId)
     if (!channelEntity) return
 
     this.sendMessage(streamInfo, channelEntity)
