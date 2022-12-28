@@ -8,7 +8,7 @@ interface Environments {
   DATABASE_URL: string
   BOT_TOKEN: string
   BOT_OWNER_ID: number
-  CHAT_ID: string
+  CHAT_ID: number
   CLIENT_ID: string
   CLIENT_SECRET: string
   ACCESS_TOKEN: string
@@ -36,7 +36,7 @@ export class ConfigProvider {
       }),
       BOT_TOKEN: str(),
       BOT_OWNER_ID: num(),
-      CHAT_ID: str(),
+      CHAT_ID: num(),
       CLIENT_ID: str(),
       CLIENT_SECRET: str(),
       ACCESS_TOKEN: str(),

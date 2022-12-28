@@ -27,20 +27,20 @@ export class TelegramCommands {
 
     this.telegramService.command(
       'add',
-      this.telegramMiddleware.isOwner,
-      this.addCommand.bind(this)
+      (ctx, next) => this.telegramMiddleware.isOwner(ctx, next),
+      (ctx) => this.addCommand(ctx)
     )
 
     this.telegramService.command(
       ['remove', 'delete'],
-      this.telegramMiddleware.isOwner,
-      this.removeCommand.bind(this)
+      (ctx, next) => this.telegramMiddleware.isOwner(ctx, next),
+      (ctx) => this.removeCommand(ctx)
     )
 
     this.telegramService.command(
       ['streams', 'channels'],
-      this.telegramMiddleware.botTyping,
-      this.streamsCommand.bind(this)
+      (ctx, next) => this.telegramMiddleware.botTyping(ctx, next),
+      (ctx) => this.streamsCommand(ctx)
     )
 
     await this.telegramService.initialize(this.eventSubService)
@@ -119,6 +119,7 @@ export class TelegramCommands {
     const users = await this.apiService.getUsersById(
       channels.map((channel) => channel.id)
     )
+
     const message = await Object.values(users).reduce<Promise<string[]>>(
       async (acc, channel) => {
         const arr = await acc
