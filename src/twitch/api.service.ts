@@ -7,12 +7,10 @@ import type { HelixStream, HelixUser } from '@twurple/api'
 export class ApiService {
   private apiClient: ApiClient
 
-  constructor(private readonly authService?: AuthService) {
-    if (this.authService?.provider) {
-      this.apiClient = new ApiClient({
-        authProvider: this.authService.provider
-      })
-    }
+  constructor(private readonly authService: AuthService) {}
+
+  async init(): Promise<void> {
+    this.apiClient = new ApiClient({ authProvider: this.authService.provider })
   }
 
   async getStreamById(userId: string): Promise<HelixStream | null> {
