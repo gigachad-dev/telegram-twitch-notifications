@@ -56,6 +56,7 @@ export class EventSubService {
 
   async subscribeEvent(channelId: string): Promise<void> {
     if (this.events.has(channelId)) return
+
     const onlineEvent = await this.eventsub.subscribeToStreamOnlineEvents(
       channelId,
       (event) => this.onStreamOnline(event)
@@ -72,8 +73,10 @@ export class EventSubService {
   async unsubscribeEvent(channelId: string): Promise<void> {
     const events = this.events.get(channelId)
     if (!events) return
+
     await events.onlineEvent.stop()
     await events.offlineEvent.stop()
+
     this.events.delete(channelId)
   }
 
@@ -137,12 +140,7 @@ export class EventSubService {
         channelEntity.stream.messageId,
         { caption: photoDescription }
       )
-    } catch {
-      console.log(dedent`
-        displayName: ${channelInfo.displayName}
-        messageId: ${channelEntity.stream.messageId}
-      `)
-    }
+    } catch {}
 
     await this.databaseService.deleteStream(channelEntity.id)
   }

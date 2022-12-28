@@ -1,18 +1,25 @@
 import 'reflect-metadata'
-import { container } from 'tsyringe'
+import { autoInjectable, container } from 'tsyringe'
 import { DatabaseService } from './database/database.service.js'
 import { TelegramCommands } from './telegram/telegram.commands.js'
 import { AuthService } from './twitch/auth.service.js'
 import { EventSubService } from './twitch/eventsub.service.js'
 
-const database = container.resolve(DatabaseService)
-await database.initialize()
+@autoInjectable()
+class App {
+  constructor(
+    private readonly databaseService: DatabaseService,
+    private readonly authService: AuthService,
+    private readonly eventSubService: EventSubService,
+    private readonly telegramCommands: TelegramCommands
+  ) {}
 
-const auth = container.resolve(AuthService)
-await auth.initialize()
+  async initialize(): Promise<void> {
+    await this.databaseService.initialize()
+    await this.authService.initialize()
+    await this.eventSubService.initialize()
+    await this.telegramCommands.initialize()
+  }
+}
 
-const eventsub = container.resolve(EventSubService)
-await eventsub.initialize()
-
-const commands = container.resolve(TelegramCommands)
-await commands.initialize()
+await container.resolve(App).initialize()
