@@ -12,7 +12,7 @@ export class ExpressService {
     private readonly eventSubService: EventSubService
   ) {}
 
-  async initialize(): Promise<void> {
+  async init(): Promise<void> {
     const { port, hostname } = this.configService.serverConfig
     this.eventSubService.middleware.apply(this.server)
     this.server.listen(port, hostname, async () => {
