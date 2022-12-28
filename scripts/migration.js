@@ -20,5 +20,5 @@ if (!name) {
 }
 
 execSync(`
-  pnpm typeorm-ts-node-esm -d ${dir}/src/database.ts migration:generate ${dir}/src/migrations/${name}
+  pnpm typeorm-ts-node-esm -d ${dir}/src/database/datasource.ts migration:generate ${dir}/src/migrations/${name}
 `)

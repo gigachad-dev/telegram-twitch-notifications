@@ -3,8 +3,10 @@ import { ClientCredentialsAuthProvider } from '@twurple/auth'
 import { EventSubMiddleware } from '@twurple/eventsub'
 import dedent from 'dedent'
 import Ngrok from 'ngrok'
-import { config } from '../config.js'
-import { Repositories } from '../repositories.js'
+import { singleton } from 'tsyringe'
+import { ConfigService } from '../config/config.service.js'
+import { DatabaseService } from '../database/database.service.js'
+import { TelegramService } from '../telegram/telegram.service.js'
 import type { Channel } from '../entities/index.js'
 import type { HelixStream } from '@twurple/api'
 import type {
@@ -12,23 +14,28 @@ import type {
   EventSubStreamOnlineEvent,
   EventSubSubscription
 } from '@twurple/eventsub'
-import type { Api, Bot, Context, RawApi } from 'grammy'
 
 interface ChannelEvents {
   onlineEvent: EventSubSubscription<unknown>
   offlineEvent: EventSubSubscription<unknown>
 }
 
-export class EventSub {
+@singleton()
+export class EventSubService {
   private eventsub: EventSubMiddleware
   private readonly events = new Map<string, ChannelEvents>()
 
-  constructor(private readonly bot: Bot<Context, Api<RawApi>>) {}
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly databaseService: DatabaseService,
+    private readonly telegramService: TelegramService
+  ) {}
 
-  async initialize() {
+  async initialize(): Promise<void> {
+    const { clientId, clientSecret } = this.configService.twitchTokens
     const authProvider = new ClientCredentialsAuthProvider(
-      config.CLIENT_ID,
-      config.CLIENT_SECRET
+      clientId,
+      clientSecret
     )
 
     const apiClient = new ApiClient({ authProvider })
@@ -39,7 +46,7 @@ export class EventSub {
       hostName: await this.getHostName(),
       pathPrefix: '/twitch',
       strictHostCheck: true,
-      secret: config.CLIENT_SECRET
+      secret: clientSecret
     })
   }
 
@@ -62,11 +69,20 @@ export class EventSub {
     this.events.set(channelId, { onlineEvent, offlineEvent })
   }
 
+  async unsubscribeEvent(channelId: string): Promise<void> {
+    const events = this.events.get(channelId)
+    if (!events) return
+    await events.onlineEvent.stop()
+    await events.offlineEvent.stop()
+    this.events.delete(channelId)
+  }
+
   private async onStreamOnline(
     event: EventSubStreamOnlineEvent
   ): Promise<void> {
     const streamInfo = await event.getStream()
-    const channelEntity = await Repositories.getChannel(streamInfo.id)
+    const channelEntity = await this.databaseService.getChannel(streamInfo.id)
+    if (!channelEntity) return
 
     this.sendMessage(streamInfo, channelEntity)
   }
@@ -83,17 +99,17 @@ export class EventSub {
       ended: false
     })
 
-    const sendedMessage = await this.bot.api.sendPhoto(
-      config.CHAT_ID,
+    const sendedMessage = await this.telegramService.api.sendPhoto(
+      this.configService.telegramTokens.chatId,
       `${streamThumbnailUrl}?timestamp=${Date.now()}`,
       {
         caption: photoDescription,
         message_thread_id: channelEntity.topicId,
-        disable_notification: config.isDev
+        disable_notification: this.configService.isDev
       }
     )
 
-    await Repositories.upsertStream({
+    await this.databaseService.upsertStream({
       channelId: channelEntity.id,
       title: streamInfo.title,
       game: streamInfo.gameName,
@@ -105,7 +121,8 @@ export class EventSub {
     event: EventSubStreamOfflineEvent
   ): Promise<void> {
     const channelInfo = await event.getBroadcaster()
-    const channelEntity = await Repositories.getChannel(channelInfo.id)
+    const channelEntity = await this.databaseService.getChannel(channelInfo.id)
+    if (!channelEntity?.stream) return
 
     const photoDescription = this.generateDescription({
       game: channelEntity.stream.game,
@@ -115,12 +132,10 @@ export class EventSub {
     })
 
     try {
-      await this.bot.api.editMessageCaption(
-        config.CHAT_ID,
+      await this.telegramService.api.editMessageCaption(
+        this.configService.telegramTokens.chatId,
         channelEntity.stream.messageId,
-        {
-          caption: photoDescription
-        }
+        { caption: photoDescription }
       )
     } catch {
       console.log(dedent`
@@ -129,7 +144,7 @@ export class EventSub {
       `)
     }
 
-    await Repositories.deleteStream(channelEntity.id)
+    await this.databaseService.deleteStream(channelEntity.id)
   }
 
   private generateDescription({
@@ -138,8 +153,8 @@ export class EventSub {
     username,
     ended
   }: {
-    title: string
-    game?: string
+    title: string | null
+    game: string | null
     username: string
     ended: boolean
   }): string {
@@ -149,25 +164,15 @@ export class EventSub {
     `
   }
 
-  async unsubscribeEvent(channelId: string): Promise<void> {
-    if (!this.events.has(channelId)) return
-    const events = this.events.get(channelId)
-    await events.onlineEvent.stop()
-    await events.offlineEvent.stop()
-    this.events.delete(channelId)
-  }
-
   private async getHostName(): Promise<string> {
-    let hostName = ''
+    const { hostname, port } = this.configService.serverConfig
 
-    if (config.isDev) {
+    if (this.configService.isDev) {
       await Ngrok.disconnect()
-      const tunnel = await Ngrok.connect(config.PORT)
-      hostName = tunnel.replace('https://', '')
-    } else {
-      hostName = config.HOSTNAME.replace('https://', '')
+      const tunnel = await Ngrok.connect(port)
+      return tunnel.replace('https://', '')
     }
 
-    return hostName
+    return hostname.replace('https://', '')
   }
 }

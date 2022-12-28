@@ -3,59 +3,59 @@ import {
   accessTokenIsExpired,
   RefreshingAuthProvider
 } from '@twurple/auth'
-import { config } from '../config.js'
-import { Repositories } from '../repositories.js'
+import { injectable, singleton } from 'tsyringe'
+import { ConfigService } from '../config/config.service.js'
+import { DatabaseService } from '../database/database.service.js'
 import type { Tokens } from '../entities/token.js'
 
-export class AuthProvider {
+@singleton()
+export class AuthService {
   private _authProvider: RefreshingAuthProvider
 
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly databaseService: DatabaseService
+  ) {}
+
   async initialize(): Promise<void> {
+    const { clientId, clientSecret } = this.configService.twitchTokens
     const tokens = await this.authTokens()
 
     this._authProvider = new RefreshingAuthProvider(
       {
-        clientId: config.CLIENT_ID,
-        clientSecret: config.CLIENT_SECRET,
+        clientId,
+        clientSecret,
         onRefresh: (token) => this.onRefreshToken(token)
       },
       tokens
     )
+
+    await this._authProvider.refresh()
   }
 
   get provider(): RefreshingAuthProvider {
     return this._authProvider
   }
 
-  async getTokens(): Promise<Tokens | null> {
-    const tokens = await Repositories.token.find({
-      order: {
-        id: 'DESC'
-      },
-      take: 1
-    })
-
-    return tokens[0]
-  }
-
   private async onRefreshToken(accessToken: AccessToken): Promise<void> {
     const tokens = {
       ...accessToken,
       obtainmentTimestamp: new Date(accessToken.obtainmentTimestamp)
-    }
+    } as Tokens
 
-    await Repositories.token.save(tokens)
+    await this.databaseService.upsertTokens(tokens)
   }
 
   private async authTokens() {
+    const { accessToken, refreshToken } = this.configService.twitchTokens
     const initialTokens = {
-      accessToken: config.ACCESS_TOKEN,
-      refreshToken: config.REFRESH_TOKEN,
+      accessToken,
+      refreshToken,
       expiresIn: 1,
       obtainmentTimestamp: 0
     }
 
-    const currentTokens = await this.getTokens()
+    const currentTokens = await this.databaseService.getTokens()
     if (currentTokens) {
       const parsedTokens = {
         ...currentTokens,

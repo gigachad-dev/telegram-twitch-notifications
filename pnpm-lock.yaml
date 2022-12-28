@@ -22,6 +22,7 @@ specifiers:
   reflect-metadata: ^0.1.13
   ts-node: ^10.9.1
   tsx: ^3.12.1
+  tsyringe: ^4.7.0
   typeorm: ^0.3.11
   typescript: ^4.9.4
 
@@ -37,6 +38,7 @@ dependencies:
   ngrok: 4.3.3
   pg: 8.8.0
   reflect-metadata: 0.1.13
+  tsyringe: 4.7.0
   typeorm: 0.3.11_pg@8.8.0+ts-node@10.9.1
 
 devDependencies:
@@ -3095,6 +3097,10 @@ packages:
       v8-compile-cache-lib: 3.0.1
       yn: 3.1.1
 
+  /tslib/1.14.1:
+    resolution: {integrity: sha512-Xni35NKzjgMrwevysHTCArtLDpPvye8zV/0E4EyYn43P7/7qvQwPh9BGkHewbMulVntbigmcT7rdX3BNo9wRJg==}
+    dev: false
+
   /tslib/2.3.1:
     resolution: {integrity: sha512-77EbyPPpMz+FRFRuAFlWMtmgUWGe9UOG2Z25NqCwiIjRhOf5iKGuzSe5P2w1laq+FkRy4p+PCuVkJSGkzTEKVw==}
     dev: false
@@ -3113,6 +3119,13 @@ packages:
     optionalDependencies:
       fsevents: 2.3.2
     dev: true
+
+  /tsyringe/4.7.0:
+    resolution: {integrity: sha512-ncFDM1jTLsok4ejMvSW5jN1VGPQD48y2tfAR0pdptWRKYX4bkbqPt92k7KJ5RFJ1KV36JEs/+TMh7I6OUgj74g==}
+    engines: {node: '>= 6.0.0'}
+    dependencies:
+      tslib: 1.14.1
+    dev: false
 
   /type-fest/1.4.0:
     resolution: {integrity: sha512-yGSza74xk0UG8k+pLh5oeoYirvIiWo5t0/o3zHHAO2tRDiZcxWP7fywNlXhqb6/r6sWvwi+RsyQMWhVLe4BVuA==}

@@ -1,166 +1,18 @@
 import 'reflect-metadata'
-import dedent from 'dedent'
-import { Bot } from 'grammy'
-import { config } from './config.js'
-import { database } from './database.js'
-import { botTyping, isOwner } from './middlewares.js'
-import { Repositories } from './repositories.js'
-import { Server } from './server.js'
-import { ApiClient, AuthProvider, EventSub } from './twitch/index.js'
+import { container } from 'tsyringe'
+import { DatabaseService } from './database/database.service.js'
+import { TelegramCommands } from './telegram/telegram.commands.js'
+import { AuthService } from './twitch/auth.service.js'
+import { EventSubService } from './twitch/eventsub.service.js'
 
+const database = container.resolve(DatabaseService)
 await database.initialize()
-await database.runMigrations()
 
-const bot = new Bot(config.BOT_TOKEN)
-bot.api.setMyCommands([
-  {
-    command: 'streamers',
-    description: 'Получить список стримеров.'
-  }
-])
-
-const auth = new AuthProvider()
+const auth = container.resolve(AuthService)
 await auth.initialize()
 
-const eventsub = new EventSub(bot)
+const eventsub = container.resolve(EventSubService)
 await eventsub.initialize()
 
-const server = new Server(eventsub)
-await server.initialize()
-
-const api = new ApiClient(auth)
-
-bot.command('add', isOwner, async (ctx) => {
-  try {
-    const username = ctx.match
-    if (!username) {
-      throw new Error('Укажите никнейм канала.')
-    }
-
-    const channelInfo = await api.getChannelByName(username)
-    if (!channelInfo) {
-      throw new Error(`Канал "${username}" не найден.`)
-    }
-
-    const channelEntity = await Repositories.getChannel(channelInfo.id)
-    if (channelEntity) {
-      throw new Error(
-        `Канал "${channelInfo.displayName}" уже имеет подписку на уведомления.`
-      )
-    }
-
-    await Repositories.addChannel({
-      id: channelInfo.id,
-      topicId: ctx.message.message_thread_id
-    })
-
-    await eventsub.subscribeEvent(channelInfo.id)
-    throw new Error(
-      `Подписка на уведомления для канала "${channelInfo.displayName}" успешно создана.`
-    )
-  } catch (err) {
-    ctx.reply((err as Error).message, {
-      message_thread_id: ctx.message.message_thread_id
-    })
-  }
-})
-
-bot.command(['delete', 'remove'], isOwner, async (ctx) => {
-  try {
-    const username = ctx.match
-    if (!username) {
-      throw new Error('Укажите никнейм канала.')
-    }
-
-    const channelInfo = await api.getChannelByName(username)
-    if (!channelInfo) {
-      throw new Error(`Канал "${username}" не найден.`)
-    }
-
-    const channelEntity = await Repositories.getChannel(channelInfo.id)
-    if (!channelEntity) {
-      throw new Error(
-        `Канал "${channelInfo.displayName}" не имеет подписки на уведомления.`
-      )
-    }
-
-    await Repositories.deleteChannel(channelEntity.id)
-    await eventsub.unsubscribeEvent(channelInfo.id)
-
-    throw new Error(
-      `Канал "${channelInfo.displayName}" отписан от уведомлений.`
-    )
-  } catch (err) {
-    ctx.reply((err as Error).message, {
-      message_thread_id: ctx.message.message_thread_id
-    })
-  }
-})
-
-bot.command(['channels', 'streamers'], botTyping, async (ctx) => {
-  const channels = await Repositories.channel.find({
-    select: {
-      id: true
-    }
-  })
-
-  const users = await api.getUsersById(channels.map((channel) => channel.id))
-  const message = await Object.values(users).reduce<Promise<string[]>>(
-    async (acc, channel) => {
-      const arr = await acc
-      const streamInfo = await channel.getStream()
-      const channelLink = `[${channel.displayName}](https://twitch.tv/${channel.name})`
-
-      if (streamInfo) {
-        arr.unshift(
-          dedent`
-            ${channelLink} ${
-            streamInfo.type === 'live' ? `👀 ${streamInfo.viewers} ` : ''
-          }
-            ${streamInfo.title}${
-            streamInfo.gameName ? ` — ${streamInfo.gameName}` : ''
-          }\n
-          `
-        )
-        return acc
-      }
-
-      arr.push(channelLink)
-      return acc
-    },
-    Promise.resolve([])
-  )
-
-  ctx.reply(
-    message.length ? message.join('\n') : 'Подписки на каналы отсутствуют.',
-    {
-      parse_mode: 'Markdown',
-      disable_web_page_preview: true,
-      message_thread_id: ctx.message.message_thread_id
-    }
-  )
-})
-
-bot.start({
-  allowed_updates: ['message'],
-  async onStart() {
-    const channels = await Repositories.channel.find({
-      relations: {
-        stream: true
-      }
-    })
-
-    for (const channel of channels) {
-      if (!channel.stream) {
-        const streamInfo = await api.getStreamById(channel.id)
-        if (streamInfo?.type === 'live') {
-          eventsub.sendMessage(streamInfo, channel)
-        }
-      }
-
-      await eventsub.subscribeEvent(channel.id)
-    }
-  }
-})
-
-bot.catch(console.log)
+const commands = container.resolve(TelegramCommands)
+await commands.initialize()
