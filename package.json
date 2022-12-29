@@ -4,7 +4,7 @@
   "description": "telegram-twitch-notifications",
   "type": "module",
   "scripts": {
-    "start": "pnpm build && node dist/index.js",
+    "start": "node dist/index.js",
     "dev": "nodemon",
     "build": "rm -rf dist && tsc",
     "format": "prettier --write --ignore-unknown **",

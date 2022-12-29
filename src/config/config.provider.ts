@@ -5,7 +5,9 @@ import { cleanEnv, num, str } from 'envalid'
 import { singleton } from 'tsyringe'
 
 interface Environments {
-  DATABASE_URL: string
+  POSTGRES_USER: string
+  POSTGRES_PASSWORD: string
+  POSTGRES_DB: string
   BOT_TOKEN: string
   BOT_OWNER_ID: number
   CHAT_ID: number
@@ -31,9 +33,9 @@ export class ConfigProvider {
     dotenv.config({ path: envPath })
 
     this.config = cleanEnv<Environments>(process.env, {
-      DATABASE_URL: str({
-        default: 'postgresql://tg:tg@localhost:5432/tg?schema=public'
-      }),
+      POSTGRES_DB: str(),
+      POSTGRES_PASSWORD: str(),
+      POSTGRES_USER: str(),
       BOT_TOKEN: str(),
       BOT_OWNER_ID: num(),
       CHAT_ID: num(),

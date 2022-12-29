@@ -33,7 +33,11 @@ export class ConfigService {
     }
   }
 
-  get databaseUrl(): string {
-    return this.configProvider.config.DATABASE_URL
+  get databaseConfig() {
+    return {
+      database: this.configProvider.config.POSTGRES_DB,
+      username: this.configProvider.config.POSTGRES_USER,
+      password: this.configProvider.config.POSTGRES_PASSWORD
+    }
   }
 }

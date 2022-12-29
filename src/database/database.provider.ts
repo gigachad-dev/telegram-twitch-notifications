@@ -7,8 +7,8 @@ import * as entities from '../entities/index.js'
 export class DatabaseProvider extends DataSource {
   constructor(private readonly configService: ConfigService) {
     super({
+      ...configService.databaseConfig,
       type: 'postgres',
-      url: configService.databaseUrl,
       entities: Object.values(entities),
       migrations: [
         configService.isDev ? 'src/migrations/*.ts' : 'dist/migrations/*.js'

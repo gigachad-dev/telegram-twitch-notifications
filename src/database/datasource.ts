@@ -9,7 +9,9 @@ const migrationsPath =
 
 const dataSource = new DataSource({
   type: 'postgres',
-  url: process.env['DATABASE_URL'],
+  database: process.env['POSTGRES_DB'],
+  username: process.env['POSTGRES_USER'],
+  password: process.env['POSTGRES_PASSWORD'],
   entities: Object.values(entities),
   migrations: [migrationsPath]
 })
