@@ -97,9 +97,11 @@ export class EventSubService {
       await this.telegramService.api.editMessageCaption(
         this.configService.telegramTokens.chatId,
         channelEntity.stream.messageId,
-        { caption: photoDescription }
+        { parse_mode: 'HTML', caption: photoDescription }
       )
-    } catch {}
+    } catch (err) {
+      console.log(err)
+    }
 
     await this.databaseService.upsertStream({
       channelId: channelEntity.id,
@@ -148,6 +150,7 @@ export class EventSubService {
       this.configService.telegramTokens.chatId,
       `${streamThumbnailUrl}?timestamp=${Date.now()}`,
       {
+        parse_mode: 'HTML',
         caption: photoDescription,
         message_thread_id: channelEntity.topicId,
         disable_notification: this.configService.isDev
@@ -180,9 +183,11 @@ export class EventSubService {
       await this.telegramService.api.editMessageCaption(
         this.configService.telegramTokens.chatId,
         channelEntity.stream.messageId,
-        { caption: photoDescription }
+        { parse_mode: 'HTML', caption: photoDescription }
       )
-    } catch {}
+    } catch (err) {
+      console.log(err)
+    }
 
     await this.databaseService.deleteStream(channelEntity.id)
   }

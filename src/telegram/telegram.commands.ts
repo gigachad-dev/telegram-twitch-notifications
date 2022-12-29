@@ -124,7 +124,7 @@ export class TelegramCommands {
       async (acc, channel) => {
         const arr = await acc
         const streamInfo = await channel.getStream()
-        const channelLink = `[${channel.displayName}](https://twitch.tv/${channel.name})`
+        const channelLink = `<a href="https://twitch.tv/${channel.name}">${channel.displayName}</a>`
         if (streamInfo) {
           arr.unshift(
             dedent`
@@ -147,7 +147,7 @@ export class TelegramCommands {
     ctx.reply(
       message.length ? message.join('\n') : 'Подписки на каналы отсутствуют.',
       {
-        parse_mode: 'Markdown',
+        parse_mode: 'HTML',
         disable_web_page_preview: true,
         message_thread_id: ctx.message!.message_thread_id!
       }
