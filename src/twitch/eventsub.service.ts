@@ -10,6 +10,7 @@ import { TelegramService } from '../telegram/telegram.service.js'
 import type { Channel } from '../entities/index.js'
 import type { HelixStream } from '@twurple/api'
 import type {
+  EventSubChannelUpdateEvent,
   EventSubStreamOfflineEvent,
   EventSubStreamOnlineEvent,
   EventSubSubscription
@@ -18,6 +19,7 @@ import type {
 interface ChannelEvents {
   onlineEvent: EventSubSubscription<unknown>
   offlineEvent: EventSubSubscription<unknown>
+  updateEvent: EventSubSubscription<unknown>
 }
 
 @singleton()
@@ -68,7 +70,43 @@ export class EventSubService {
       (event) => this.onStreamOffline(event)
     )
 
-    this.events.set(channelId, { onlineEvent, offlineEvent })
+    const updateEvent = await this.eventsub.subscribeToChannelUpdateEvents(
+      channelId,
+      (event) => this.onUpdateChannel(event)
+    )
+
+    this.events.set(channelId, { onlineEvent, offlineEvent, updateEvent })
+  }
+
+  private async onUpdateChannel(
+    event: EventSubChannelUpdateEvent
+  ): Promise<void> {
+    const channelEntity = await this.databaseService.getChannel(
+      event.broadcasterId
+    )
+    if (!channelEntity?.stream) return
+
+    const photoDescription = this.generateDescription({
+      game: event.categoryName,
+      title: event.streamTitle,
+      username: event.broadcasterDisplayName,
+      ended: false
+    })
+
+    try {
+      await this.telegramService.api.editMessageCaption(
+        this.configService.telegramTokens.chatId,
+        channelEntity.stream.messageId,
+        { caption: photoDescription }
+      )
+    } catch {}
+
+    await this.databaseService.upsertStream({
+      channelId: channelEntity.id,
+      title: event.streamTitle,
+      game: event.categoryName,
+      messageId: channelEntity.stream.messageId
+    })
   }
 
   async unsubscribeEvent(channelId: string): Promise<void> {
@@ -77,6 +115,7 @@ export class EventSubService {
 
     await events.onlineEvent.stop()
     await events.offlineEvent.stop()
+    await events.updateEvent.stop()
 
     this.events.delete(channelId)
   }
@@ -85,7 +124,9 @@ export class EventSubService {
     event: EventSubStreamOnlineEvent
   ): Promise<void> {
     const streamInfo = await event.getStream()
-    const channelEntity = await this.databaseService.getChannel(streamInfo.userId)
+    const channelEntity = await this.databaseService.getChannel(
+      streamInfo.userId
+    )
     if (!channelEntity) return
 
     this.sendMessage(streamInfo, channelEntity)
