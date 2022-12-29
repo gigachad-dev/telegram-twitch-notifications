@@ -17,7 +17,7 @@ export class ExpressService {
   async init(): Promise<void> {
     await this.eventSubService.init()
     await this.eventSubService.middleware.apply(this.server)
-    this.server.listen(this.configService.serverConfig.port, async () => {
+    this.server.listen(this.configService.serverConfig.port, '0.0.0.0', async () => {
       await this.eventSubService.middleware.markAsReady()
       await this.telegramCommands.init()
     })
