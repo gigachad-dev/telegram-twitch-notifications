@@ -4,7 +4,7 @@ services:
   app:
     image: ghcr.io/gigachad-dev/telegram-twitch-notifications:latest
     ports:
-      - 5005:5005
+      - 5005:3003
     env_file:
       - .env
     depends_on:
