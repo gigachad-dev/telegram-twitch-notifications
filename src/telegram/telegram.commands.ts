@@ -48,36 +48,45 @@ export class TelegramCommands {
 
   private async addCommand(ctx: CommandContext<Context>): Promise<void> {
     try {
-      const username = ctx.match
-      if (!username) {
+      const userNames = ctx.match.split(' ').filter(Boolean)
+      if (!userNames.length) {
         throw new Error('Укажите никнейм канала.')
       }
 
-      const channelInfo = await this.apiService.getChannelByName(username)
-      if (!channelInfo) {
-        throw new Error(`Канал "${username}" не найден.`)
+      const channelsInfo = await this.apiService.getChannelsByNames(userNames)
+      if (!channelsInfo.length) {
+        throw new Error(`Каналы ${userNames.join(', ')} не найдены.`)
       }
 
-      const channelEntity = await this.databaseService.getChannel(
-        channelInfo.id
-      )
-      if (channelEntity) {
-        throw new Error(
-          `Канал "${channelInfo.displayName}" уже имеет подписку на уведомления.`
-        )
+      const alreadySubscribedChannels: string[] = []
+      for (const channel of channelsInfo) {
+        const channelEntity = await this.databaseService.getChannel(channel.id)
+
+        if (channelEntity) {
+          alreadySubscribedChannels.push(channel.id)
+          continue
+        }
+
+        await this.databaseService.addChannel({
+          id: channel.id,
+          topicId: ctx.message!.message_thread_id!
+        })
+
+        await this.eventSubService.subscribeEvent(channel.id)
       }
 
-      await this.databaseService.addChannel({
-        id: channelInfo.id,
-        topicId: ctx.message!.message_thread_id!
-      })
+      const subscribedChannels = channelsInfo
+        .filter((channel) => !alreadySubscribedChannels.includes(channel.id))
+        .map((channel) => `https://twitch.tv/${channel.name}`)
+        .join('\n')
 
-      await this.eventSubService.subscribeEvent(channelInfo.id)
-      throw new Error(
-        `Подписка на уведомления для канала "${channelInfo.displayName}" успешно создана.`
-      )
+      throw new Error(dedent`
+        Подписки на уведомления успешно созданы.\n
+        ${subscribedChannels}
+      `)
     } catch (err) {
       ctx.reply((err as Error).message, {
+        disable_web_page_preview: true,
         message_thread_id: ctx.message!.message_thread_id!
       })
     }

@@ -21,6 +21,10 @@ export class ApiService {
     return await this.apiClient.users.getUserByName(name)
   }
 
+  async getChannelsByNames(userNames: string[]): Promise<HelixUser[]> {
+    return await this.apiClient.users.getUsersByNames(userNames)
+  }
+
   async getUsersById(userIds: string[]): Promise<HelixUser[]> {
     return await this.apiClient.users.getUsersByIds(userIds)
   }
