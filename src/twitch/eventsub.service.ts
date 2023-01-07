@@ -7,8 +7,9 @@ import { singleton } from 'tsyringe'
 import { ConfigService } from '../config/config.service.js'
 import { DatabaseService } from '../database/database.service.js'
 import { TelegramService } from '../telegram/telegram.service.js'
+import { ApiService } from './api.service.js'
 import type { Channel } from '../entities/index.js'
-import type { HelixStream } from '@twurple/api'
+import type { HelixChannel } from '@twurple/api'
 import type {
   EventSubChannelUpdateEvent,
   EventSubStreamOfflineEvent,
@@ -30,7 +31,8 @@ export class EventSubService {
   constructor(
     private readonly configService: ConfigService,
     private readonly databaseService: DatabaseService,
-    private readonly telegramService: TelegramService
+    private readonly telegramService: TelegramService,
+    private readonly apiService: ApiService
   ) {}
 
   async init(): Promise<void> {
@@ -125,30 +127,34 @@ export class EventSubService {
   private async onStreamOnline(
     event: EventSubStreamOnlineEvent
   ): Promise<void> {
-    const streamInfo = await event.getStream()
-    const channelEntity = await this.databaseService.getChannel(
-      streamInfo.userId
+    if (event.type !== 'live') return
+
+    const channelInfo = await this.apiService.getChannelInfoById(
+      event.broadcasterId
     )
+    if (!channelInfo) return
+
+    const channelEntity = await this.databaseService.getChannel(channelInfo.id)
     if (!channelEntity) return
 
-    this.sendMessage(streamInfo, channelEntity)
+    this.sendMessage(channelInfo, channelEntity)
   }
 
   async sendMessage(
-    streamInfo: HelixStream,
+    channelInfo: HelixChannel,
     channelEntity: Channel
   ): Promise<void> {
-    const streamThumbnailUrl = streamInfo.getThumbnailUrl(1920, 1080)
+    const streamThumbnailUrl = this.apiService.getThumbnailUrl(channelInfo.name)
     const photoDescription = this.generateDescription({
-      game: streamInfo.gameName,
-      title: streamInfo.title,
-      username: streamInfo.userDisplayName,
+      game: channelInfo.gameName,
+      title: channelInfo.title,
+      username: channelInfo.displayName,
       ended: false
     })
 
     const sendedMessage = await this.telegramService.api.sendPhoto(
       this.configService.telegramTokens.chatId,
-      `${streamThumbnailUrl}?timestamp=${Date.now()}`,
+      streamThumbnailUrl,
       {
         parse_mode: 'HTML',
         caption: photoDescription,
@@ -159,8 +165,8 @@ export class EventSubService {
 
     await this.databaseService.upsertStream({
       channelId: channelEntity.id,
-      title: streamInfo.title,
-      game: streamInfo.gameName,
+      title: channelInfo.title,
+      game: channelInfo.gameName,
       messageId: sendedMessage.message_id
     })
   }
