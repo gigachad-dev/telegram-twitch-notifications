@@ -1,3 +1,9 @@
 # telegram-twitch-notifications
 
-> _This template a pure ESM package. If you're having trouble importing it in your project, please [read this](https://gist.github.com/sindresorhus/a39789f98801d908bbc7ff3ecc99d99c)._
+# Docker
+
+- Copy `docker-compose.yml` and `.env`.
+- `docker compose pull`
+- `docker compose up -d`
+- `docker compose logs -f app`
+- `docker compose restart`

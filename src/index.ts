@@ -3,7 +3,6 @@ import { autoInjectable, container } from 'tsyringe'
 import { ConfigService } from './config/config.service.js'
 import { DatabaseService } from './database/database.service.js'
 import { ExpressService } from './express/express.service.js'
-import { TelegramCommands } from './telegram/telegram.commands.js'
 import { ApiService } from './twitch/api.service.js'
 import { AuthService } from './twitch/auth.service.js'
 import { EventSubService } from './twitch/eventsub.service.js'
@@ -17,7 +16,6 @@ class App {
     private readonly apiService: ApiService,
     private readonly eventSubService: EventSubService,
     private readonly expressService: ExpressService,
-    private readonly telegramCommands: TelegramCommands
   ) {}
 
   async initialize(): Promise<void> {
