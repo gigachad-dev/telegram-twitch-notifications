@@ -1,11 +1,11 @@
 import { ApiClient } from '@twurple/api'
 import { ClientCredentialsAuthProvider } from '@twurple/auth'
 import { EventSubMiddleware } from '@twurple/eventsub-http'
-import Ngrok from 'ngrok'
 import { singleton } from 'tsyringe'
 import { ConfigService } from '../config/config.service.js'
 import { DatabaseService } from '../database/database.service.js'
 import { generateNotificationMessage } from '../helpers.js'
+import { NgrokHostname } from '../ngrok.js'
 import { TelegramService } from '../telegram/telegram.service.js'
 import { ApiService } from './api.service.js'
 import type { Channel } from '../entities/index.js'
@@ -46,7 +46,7 @@ export class EventSubService {
 
     this.eventsub = new EventSubMiddleware({
       apiClient,
-      hostName: await this.getHostName(),
+      hostName: await NgrokHostname(this.configService),
       pathPrefix: '/twitch',
       strictHostCheck: true,
       secret: clientSecret
@@ -196,17 +196,5 @@ export class EventSubService {
     }
 
     await this.databaseService.deleteStream(channelEntity.id)
-  }
-
-  private async getHostName(): Promise<string> {
-    const { hostname, port } = this.configService.serverConfig
-
-    if (this.configService.isDev) {
-      await Ngrok.disconnect()
-      const tunnel = await Ngrok.connect(port)
-      return tunnel.replace('https://', '')
-    }
-
-    return hostname.replace('https://', '')
   }
 }
