@@ -2,6 +2,7 @@ import dedent from 'dedent'
 import { CommandContext, Context } from 'grammy'
 import { singleton } from 'tsyringe'
 import { DatabaseService } from '../database/database.service.js'
+import { escapeText } from '../helpers.js'
 import { ApiService } from '../twitch/api.service.js'
 import { EventSubService } from '../twitch/eventsub.service.js'
 import { TelegramMiddleware } from './telegram.middleware.js'
@@ -81,7 +82,7 @@ export class TelegramCommands {
         .join('\n')
 
       throw new Error(dedent`
-        Подписки на уведомления успешно созданы.\n
+        Подписка на уведомления успешно создана.\n
         ${subscribedChannels}
       `)
     } catch (err) {
@@ -140,7 +141,7 @@ export class TelegramCommands {
               ${channelLink} ${
               streamInfo.type === 'live' ? `👀 ${streamInfo.viewers} ` : ''
             }
-              ${streamInfo.title}${
+              ${escapeText(streamInfo.title)}${
               streamInfo.gameName ? ` — ${streamInfo.gameName}` : ''
             }\n
             `
@@ -154,7 +155,7 @@ export class TelegramCommands {
     )
 
     ctx.reply(
-      message.length ? message.join('\n') : 'Подписки на каналы отсутствуют.',
+      message.length ? message.join('\n') : 'Подписка на канал отсутствует.',
       {
         parse_mode: 'HTML',
         disable_web_page_preview: true,

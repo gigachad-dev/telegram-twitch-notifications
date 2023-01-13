@@ -15,7 +15,7 @@ class App {
     private readonly authService: AuthService,
     private readonly apiService: ApiService,
     private readonly eventSubService: EventSubService,
-    private readonly expressService: ExpressService,
+    private readonly expressService: ExpressService
   ) {}
 
   async initialize(): Promise<void> {

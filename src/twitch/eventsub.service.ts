@@ -1,11 +1,11 @@
 import { ApiClient } from '@twurple/api'
 import { ClientCredentialsAuthProvider } from '@twurple/auth'
 import { EventSubMiddleware } from '@twurple/eventsub-http'
-import dedent from 'dedent'
 import Ngrok from 'ngrok'
 import { singleton } from 'tsyringe'
 import { ConfigService } from '../config/config.service.js'
 import { DatabaseService } from '../database/database.service.js'
+import { generateNotificationMessage } from '../helpers.js'
 import { TelegramService } from '../telegram/telegram.service.js'
 import { ApiService } from './api.service.js'
 import type { Channel } from '../entities/index.js'
@@ -88,7 +88,7 @@ export class EventSubService {
     )
     if (!channelEntity?.stream) return
 
-    const photoDescription = this.generateDescription({
+    const photoDescription = generateNotificationMessage({
       game: event.categoryName,
       title: event.streamTitle,
       username: event.broadcasterDisplayName,
@@ -145,7 +145,7 @@ export class EventSubService {
     channelEntity: Channel
   ): Promise<void> {
     const streamThumbnailUrl = this.apiService.getThumbnailUrl(channelInfo.name)
-    const photoDescription = this.generateDescription({
+    const photoDescription = generateNotificationMessage({
       game: channelInfo.gameName,
       title: channelInfo.title,
       username: channelInfo.displayName,
@@ -178,7 +178,7 @@ export class EventSubService {
     const channelEntity = await this.databaseService.getChannel(channelInfo.id)
     if (!channelEntity?.stream) return
 
-    const photoDescription = this.generateDescription({
+    const photoDescription = generateNotificationMessage({
       game: channelEntity.stream.game,
       title: channelEntity.stream.title,
       username: channelInfo.displayName,
@@ -196,23 +196,6 @@ export class EventSubService {
     }
 
     await this.databaseService.deleteStream(channelEntity.id)
-  }
-
-  private generateDescription({
-    title,
-    game,
-    username,
-    ended
-  }: {
-    title: string | null
-    game: string | null
-    username: string
-    ended: boolean
-  }): string {
-    return dedent`
-      ${ended ? '🔴' : '🟢'} ${title ?? username}${game ? ` — ${game}` : ''}
-      https://twitch.tv/${username.toLowerCase()}
-    `
   }
 
   private async getHostName(): Promise<string> {
