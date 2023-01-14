@@ -1,5 +1,5 @@
 import Ngrok from 'ngrok'
-import type { ConfigService } from './config/config.service'
+import type { ConfigService } from './config/config.service.js'
 
 export async function NgrokHostname(
   configService: ConfigService

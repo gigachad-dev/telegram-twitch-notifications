@@ -7,8 +7,7 @@
     "start": "node dist/index.js",
     "dev": "nodemon",
     "build": "rm -rf dist && tsc",
-    "format": "prettier --write --ignore-unknown **",
-    "migration:generate": "node scripts/migration.js"
+    "format": "prettier --write --ignore-unknown **"
   },
   "devDependencies": {
     "@crashmax/prettier-config": "^2.2.1",
@@ -39,10 +38,9 @@
     "envalid": "^7.3.1",
     "express": "^4.18.2",
     "grammy": "^1.12.5",
+    "lowdb": "^5.0.5",
     "ngrok": "^4.3.3",
-    "pg": "^8.8.0",
     "reflect-metadata": "^0.1.13",
-    "tsyringe": "^4.7.0",
-    "typeorm": "^0.3.11"
+    "tsyringe": "^4.7.0"
   }
 }

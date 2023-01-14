@@ -1,15 +1,9 @@
-import { Column, Entity, OneToOne, PrimaryColumn } from 'typeorm'
-import { Stream } from './stream.js'
-import type { Relation } from 'typeorm'
+import type { Stream } from './stream.js'
 
-@Entity('channel')
 export class Channel {
-  @PrimaryColumn('text', { unique: true })
-  id: string
-
-  @Column('integer')
-  topicId: number
-
-  @OneToOne(() => Stream, (stream) => stream.channel)
-  stream?: Relation<Stream>
+  constructor(
+    public channelId: string,
+    public topicId: number,
+    public stream: Stream | null = null
+  ) {}
 }

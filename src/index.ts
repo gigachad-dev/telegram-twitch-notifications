@@ -1,7 +1,6 @@
 import 'reflect-metadata'
 import { autoInjectable, container } from 'tsyringe'
 import { ConfigService } from './config/config.service.js'
-import { DatabaseService } from './database/database.service.js'
 import { ExpressService } from './express/express.service.js'
 import { ApiService } from './twitch/api.service.js'
 import { AuthService } from './twitch/auth.service.js'
@@ -11,7 +10,6 @@ import { EventSubService } from './twitch/eventsub.service.js'
 class App {
   constructor(
     private readonly configService: ConfigService,
-    private readonly databaseService: DatabaseService,
     private readonly authService: AuthService,
     private readonly apiService: ApiService,
     private readonly eventSubService: EventSubService,
@@ -19,7 +17,6 @@ class App {
   ) {}
 
   async initialize(): Promise<void> {
-    await this.databaseService.init()
     await this.authService.init()
     await this.apiService.init()
     await this.eventSubService.init()
