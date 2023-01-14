@@ -43,7 +43,7 @@ export class TelegramCommands {
           hour12: false
         })
 
-        await ctx.editMessageText(streams + `\nПоследнее обновление: ${date}`, {
+        await ctx.editMessageText(streams + `\n\n<i>Последнее обновление: ${date}</i>`, {
           parse_mode: 'HTML',
           disable_web_page_preview: true
         })

@@ -3,7 +3,7 @@ import {
   accessTokenIsExpired,
   RefreshingAuthProvider
 } from '@twurple/auth'
-import { injectable, singleton } from 'tsyringe'
+import { singleton } from 'tsyringe'
 import { ConfigService } from '../config/config.service.js'
 import { DatabaseService } from '../database/database.service.js'
 import type { Tokens } from '../entities/token.js'
