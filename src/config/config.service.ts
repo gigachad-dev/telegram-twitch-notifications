@@ -32,13 +32,4 @@ export class ConfigService {
       port: this.configProvider.config.EXPRESS_PORT
     }
   }
-
-  get databaseConfig() {
-    return {
-      host: this.isDev ? 'localhost' : this.configProvider.config.POSTGRES_HOST,
-      database: this.configProvider.config.POSTGRES_DB,
-      username: this.configProvider.config.POSTGRES_USER,
-      password: this.configProvider.config.POSTGRES_PASSWORD
-    }
-  }
 }

@@ -2,7 +2,7 @@ import { Menu } from '@grammyjs/menu'
 import dedent from 'dedent'
 import { CommandContext, Context } from 'grammy'
 import { singleton } from 'tsyringe'
-import { DatabaseService } from '../database/database.service.js'
+import { DatabaseChannelsService } from '../database/channel.service.js'
 import { escapeText } from '../helpers.js'
 import { ApiService } from '../twitch/api.service.js'
 import { EventSubService } from '../twitch/eventsub.service.js'
@@ -13,7 +13,7 @@ import { TelegramService } from './telegram.service.js'
 export class TelegramCommands {
   updateStreamsMenu: Menu<Context>
   constructor(
-    private readonly databaseService: DatabaseService,
+    private readonly channelService: DatabaseChannelsService,
     private readonly telegramService: TelegramService,
     private readonly telegramMiddleware: TelegramMiddleware,
     private readonly apiService: ApiService,
@@ -43,10 +43,13 @@ export class TelegramCommands {
           hour12: false
         })
 
-        await ctx.editMessageText(streams + `\n\n<i>Последнее обновление: ${date}</i>`, {
-          parse_mode: 'HTML',
-          disable_web_page_preview: true
-        })
+        await ctx.editMessageText(
+          streams + `\n\n<i>Последнее обновление: ${date}</i>`,
+          {
+            parse_mode: 'HTML',
+            disable_web_page_preview: true
+          }
+        )
       }
     )
 
@@ -87,15 +90,15 @@ export class TelegramCommands {
 
       const alreadySubscribedChannels: string[] = []
       for (const channel of channelsInfo) {
-        const channelEntity = await this.databaseService.getChannel(channel.id)
+        const channelEntity = this.channelService.getChannel(channel.id)
 
         if (channelEntity) {
           alreadySubscribedChannels.push(channel.id)
           continue
         }
 
-        await this.databaseService.addChannel({
-          id: channel.id,
+        await this.channelService.addChannel({
+          channelId: channel.id,
           topicId: ctx.message?.message_thread_id || ctx.chat.id
         })
 
@@ -132,16 +135,14 @@ export class TelegramCommands {
         throw new Error(`Канал "${username}" не найден.`)
       }
 
-      const channelEntity = await this.databaseService.getChannel(
-        channelInfo.id
-      )
+      const channelEntity = await this.channelService.getChannel(channelInfo.id)
       if (!channelEntity) {
         throw new Error(
           `Канал "${channelInfo.displayName}" не имеет подписки на уведомления.`
         )
       }
 
-      await this.databaseService.deleteChannel(channelEntity.id)
+      await this.channelService.deleteChannel(channelEntity.channelId)
       await this.eventSubService.unsubscribeEvent(channelInfo.id)
       throw new Error(
         `Канал "${channelInfo.displayName}" отписан от уведомлений.`
@@ -166,10 +167,8 @@ export class TelegramCommands {
   }
 
   private async fetchStreams() {
-    const channels = await this.databaseService.getStreams()
-
     const users = await this.apiService.getUsersById(
-      channels.map((channel) => channel.id)
+      this.channelService.channels!.map((channel) => channel.channelId)
     )
 
     const streams = await Object.values(users).reduce<Promise<string[]>>(

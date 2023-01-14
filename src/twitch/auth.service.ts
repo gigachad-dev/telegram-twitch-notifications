@@ -5,8 +5,8 @@ import {
 } from '@twurple/auth'
 import { singleton } from 'tsyringe'
 import { ConfigService } from '../config/config.service.js'
-import { DatabaseService } from '../database/database.service.js'
-import type { Tokens } from '../entities/token.js'
+import { DatabaseTokensService } from '../database/tokens.service.js'
+import type { Tokens } from '../entities/tokens.js'
 
 @singleton()
 export class AuthService {
@@ -14,7 +14,7 @@ export class AuthService {
 
   constructor(
     private readonly configService: ConfigService,
-    private readonly databaseService: DatabaseService
+    private readonly tokensService: DatabaseTokensService
   ) {}
 
   async init(): Promise<void> {
@@ -43,7 +43,7 @@ export class AuthService {
       obtainmentTimestamp: new Date(accessToken.obtainmentTimestamp)
     } as Tokens
 
-    await this.databaseService.upsertTokens(tokens)
+    await this.tokensService.writeTokens(tokens)
   }
 
   private async authTokens() {
@@ -55,7 +55,7 @@ export class AuthService {
       obtainmentTimestamp: 0
     }
 
-    const currentTokens = await this.databaseService.getTokens()
+    const currentTokens = await this.tokensService.getTokens()
     if (currentTokens) {
       const parsedTokens = {
         ...currentTokens,
