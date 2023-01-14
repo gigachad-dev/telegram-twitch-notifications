@@ -20,12 +20,6 @@ export class ExpressService {
     await this.eventSubService.init()
     await this.eventSubService.middleware.apply(this.server)
 
-    this.server.use(Express.json())
-
-    this.server.get('/channels', async (req, res) => {
-      res.send(this.channelsService.channels)
-    })
-
     this.server.listen(
       this.configService.serverConfig.port,
       '0.0.0.0',

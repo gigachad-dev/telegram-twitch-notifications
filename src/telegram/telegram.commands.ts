@@ -135,7 +135,7 @@ export class TelegramCommands {
         throw new Error(`Канал "${username}" не найден.`)
       }
 
-      const channelEntity = await this.channelService.getChannel(channelInfo.id)
+      const channelEntity = this.channelService.getChannel(channelInfo.id)
       if (!channelEntity) {
         throw new Error(
           `Канал "${channelInfo.displayName}" не имеет подписки на уведомления.`

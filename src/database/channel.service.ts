@@ -27,7 +27,7 @@ export class DatabaseChannelsService {
   }
 
   async deleteChannel(channelId: string) {
-    this.db.data?.filter((channel) => channel.channelId !== channelId)
+    this.db.data = this.db.data!.filter((channel) => channel.channelId !== channelId)
     await this.db.write()
   }
 
