@@ -1,3 +1,4 @@
+import { Menu } from '@grammyjs/menu'
 import dedent from 'dedent'
 import { CommandContext, Context } from 'grammy'
 import { singleton } from 'tsyringe'
@@ -10,6 +11,7 @@ import { TelegramService } from './telegram.service.js'
 
 @singleton()
 export class TelegramCommands {
+  updateStreamsMenu: Menu<Context>
   constructor(
     private readonly databaseService: DatabaseService,
     private readonly telegramService: TelegramService,
@@ -25,6 +27,30 @@ export class TelegramCommands {
         description: 'Получить список стримеров.'
       }
     ])
+
+    this.updateStreamsMenu = new Menu('update-streams-menu').text(
+      'Обновить',
+      async (ctx) => {
+        const streams = await this.fetchStreams()
+        const date = new Date().toLocaleString('ru-RU', {
+          year: 'numeric',
+          month: 'numeric',
+          day: 'numeric',
+          hour: 'numeric',
+          minute: 'numeric',
+          second: 'numeric',
+          timeZone: 'Europe/Moscow',
+          hour12: false
+        })
+
+        await ctx.editMessageText(streams + `\nПоследнее обновление: ${date}`, {
+          parse_mode: 'HTML',
+          disable_web_page_preview: true
+        })
+      }
+    )
+
+    this.telegramService.use(this.updateStreamsMenu)
 
     this.telegramService.command(
       'add',
@@ -70,7 +96,7 @@ export class TelegramCommands {
 
         await this.databaseService.addChannel({
           id: channel.id,
-          topicId: ctx.message!.message_thread_id!
+          topicId: ctx.message?.message_thread_id || ctx.chat.id
         })
 
         await this.eventSubService.subscribeEvent(channel.id)
@@ -88,6 +114,7 @@ export class TelegramCommands {
     } catch (err) {
       ctx.reply((err as Error).message, {
         disable_web_page_preview: true,
+        reply_to_message_id: ctx.message!.message_id,
         message_thread_id: ctx.message!.message_thread_id!
       })
     }
@@ -99,10 +126,12 @@ export class TelegramCommands {
       if (!username) {
         throw new Error('Укажите никнейм канала.')
       }
+
       const channelInfo = await this.apiService.getChannelByName(username)
       if (!channelInfo) {
         throw new Error(`Канал "${username}" не найден.`)
       }
+
       const channelEntity = await this.databaseService.getChannel(
         channelInfo.id
       )
@@ -111,6 +140,7 @@ export class TelegramCommands {
           `Канал "${channelInfo.displayName}" не имеет подписки на уведомления.`
         )
       }
+
       await this.databaseService.deleteChannel(channelEntity.id)
       await this.eventSubService.unsubscribeEvent(channelInfo.id)
       throw new Error(
@@ -118,19 +148,31 @@ export class TelegramCommands {
       )
     } catch (err) {
       ctx.reply((err as Error).message, {
+        reply_to_message_id: ctx.message!.message_id,
         message_thread_id: ctx.message!.message_thread_id!
       })
     }
   }
 
   private async streamsCommand(ctx: CommandContext<Context>): Promise<void> {
+    const streams = await this.fetchStreams()
+
+    await ctx.reply(streams, {
+      parse_mode: 'HTML',
+      reply_markup: this.updateStreamsMenu,
+      disable_web_page_preview: true,
+      message_thread_id: ctx.message!.message_thread_id!
+    })
+  }
+
+  private async fetchStreams() {
     const channels = await this.databaseService.getStreams()
 
     const users = await this.apiService.getUsersById(
       channels.map((channel) => channel.id)
     )
 
-    const message = await Object.values(users).reduce<Promise<string[]>>(
+    const streams = await Object.values(users).reduce<Promise<string[]>>(
       async (acc, channel) => {
         const arr = await acc
         const streamInfo = await channel.getStream()
@@ -154,13 +196,6 @@ export class TelegramCommands {
       Promise.resolve([])
     )
 
-    ctx.reply(
-      message.length ? message.join('\n') : 'Подписка на канал отсутствует.',
-      {
-        parse_mode: 'HTML',
-        disable_web_page_preview: true,
-        message_thread_id: ctx.message!.message_thread_id!
-      }
-    )
+    return streams.length ? streams.join('\n') : 'Подписки отсутствуют.'
   }
 }

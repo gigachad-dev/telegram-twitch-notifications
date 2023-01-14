@@ -3,6 +3,7 @@ lockfileVersion: 5.4
 specifiers:
   '@crashmax/prettier-config': ^2.2.1
   '@crashmax/tsconfig': ^1.0.2
+  '@grammyjs/menu': ^1.1.2
   '@twurple/api': ^5.3.0
   '@twurple/auth': ^5.3.0
   '@twurple/eventsub': ^5.3.0
@@ -28,6 +29,7 @@ specifiers:
   typescript: ^4.9.4
 
 dependencies:
+  '@grammyjs/menu': 1.1.2_grammy@1.12.5
   '@twurple/api': 5.3.0_@twurple+auth@5.3.0
   '@twurple/auth': 5.3.0
   '@twurple/eventsub': 5.3.0_@twurple+api@5.3.0
@@ -406,6 +408,15 @@ packages:
     requiresBuild: true
     dev: true
     optional: true
+
+  /@grammyjs/menu/1.1.2_grammy@1.12.5:
+    resolution: {integrity: sha512-OsH9psoatplzMTsouyc8tcOjHMCfWpymmnOBC3YJ9SNi+Akpa52I+YYoiK0/jS7g24DNiR5hyr2U9YgmLeswig==}
+    engines: {node: '>=12.20.0 || >=14.13.1'}
+    peerDependencies:
+      grammy: ^1.0.0
+    dependencies:
+      grammy: 1.12.5
+    dev: false
 
   /@grammyjs/types/2.10.3:
     resolution: {integrity: sha512-8TG9uiJlPcwFb5fxJ2LdQw0eWKDmHoVYY0vS63vwHb7wJIOmZHPpPfEWKRNtEcc7/e7HHZ5qoxixZ24dPjU3Fg==}
