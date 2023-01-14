@@ -15,7 +15,7 @@ export class TelegramService extends Bot {
 
   async initialize(eventsub: EventSubService): Promise<void> {
     this.start({
-      allowed_updates: ['message'],
+      allowed_updates: ['message', 'callback_query'],
       onStart: async () => {
         const channels = await this.databaseService.getStreams()
         for (const channel of channels) {
