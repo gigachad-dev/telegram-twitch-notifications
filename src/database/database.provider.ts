@@ -9,7 +9,6 @@ export class DatabaseProvider extends DataSource {
     super({
       ...configService.databaseConfig,
       type: 'postgres',
-      host: configService.isDev ? 'localhost' : 'postgres',
       entities: Object.values(entities),
       migrations: [
         configService.isDev ? 'src/migrations/*.ts' : 'dist/migrations/*.js'
