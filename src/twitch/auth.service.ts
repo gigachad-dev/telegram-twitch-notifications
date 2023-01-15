@@ -6,7 +6,7 @@ import {
 import { singleton } from 'tsyringe'
 import { ConfigService } from '../config/config.service.js'
 import { DatabaseTokensService } from '../database/tokens.service.js'
-import type { Tokens } from '../entities/tokens.js'
+import { Tokens } from '../entities/tokens.js'
 
 @singleton()
 export class AuthService {
@@ -37,11 +37,20 @@ export class AuthService {
     return this._authProvider
   }
 
-  private async onRefreshToken(accessToken: AccessToken): Promise<void> {
-    const tokens = {
-      ...accessToken,
-      obtainmentTimestamp: new Date(accessToken.obtainmentTimestamp)
-    } as Tokens
+  private async onRefreshToken({
+    accessToken,
+    refreshToken,
+    expiresIn,
+    obtainmentTimestamp,
+    scope
+  }: AccessToken): Promise<void> {
+    const tokens = new Tokens(
+      accessToken,
+      refreshToken!,
+      expiresIn!,
+      new Date(obtainmentTimestamp),
+      scope
+    )
 
     await this.tokensService.writeTokens(tokens)
   }
@@ -55,11 +64,13 @@ export class AuthService {
       obtainmentTimestamp: 0
     }
 
-    const currentTokens = await this.tokensService.getTokens()
+    const currentTokens = this.tokensService.tokens
     if (currentTokens) {
       const parsedTokens = {
         ...currentTokens,
-        obtainmentTimestamp: currentTokens.obtainmentTimestamp.getTime()
+        obtainmentTimestamp: new Date(
+          currentTokens.obtainmentTimestamp
+        ).getTime()
       }
 
       const tokensIsExpired = accessTokenIsExpired(parsedTokens)

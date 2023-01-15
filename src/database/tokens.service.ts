@@ -1,29 +1,23 @@
-import { injectable, singleton } from 'tsyringe'
+import { LowDatabase } from '@crashmax/lowdb'
+import { singleton } from 'tsyringe'
 import { DatabaseProvider } from './database.provider.js'
 import type { Tokens } from '../entities/tokens.js'
-import type { Low } from 'lowdb'
 
 @singleton()
 export class DatabaseTokensService {
-  private readonly db: Low<Tokens>
+  private db: LowDatabase<Tokens>
 
-  constructor(private readonly database: DatabaseProvider) {
-    this.db = this.database.createDatabase<Tokens>('tokens.json')
-    this.init()
+  constructor(private readonly databaseProvider: DatabaseProvider) {}
+
+  async init() {
+    this.db = await this.databaseProvider.createDatabase<Tokens>('tokens')
   }
 
-  private async init() {
-    await this.db.read()
-    this.db.data ||= {} as Tokens
-    await this.db.write()
-  }
-
-  async getTokens() {
+  get tokens() {
     return this.db.data
   }
 
   async writeTokens(tokens: Tokens) {
-    this.db.data = tokens
-    await this.db.write()
+    await this.db.writeData(tokens)
   }
 }

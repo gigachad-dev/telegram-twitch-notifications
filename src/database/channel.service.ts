@@ -1,21 +1,19 @@
+import { LowDatabase } from '@crashmax/lowdb'
 import { singleton } from 'tsyringe'
 import { Channel, Stream } from '../entities/index.js'
 import { DatabaseProvider } from './database.provider.js'
-import type { Low } from 'lowdb'
 
 @singleton()
 export class DatabaseChannelsService {
-  private readonly db: Low<Channel[]>
+  private db: LowDatabase<Channel[]>
 
-  constructor(private readonly database: DatabaseProvider) {
-    this.db = this.database.createDatabase<Channel[]>('channels.json')
-    this.init()
-  }
+  constructor(private readonly databaseProvider: DatabaseProvider) {}
 
-  private async init() {
-    await this.db.read()
-    this.db.data ||= []
-    await this.db.write()
+  async init() {
+    this.db = await this.databaseProvider.createDatabase<Channel[]>(
+      'channels',
+      []
+    )
   }
 
   get channels() {
@@ -27,7 +25,9 @@ export class DatabaseChannelsService {
   }
 
   async deleteChannel(channelId: string) {
-    this.db.data = this.db.data!.filter((channel) => channel.channelId !== channelId)
+    this.db.data = this.db.data!.filter(
+      (channel) => channel.channelId !== channelId
+    )
     await this.db.write()
   }
 
