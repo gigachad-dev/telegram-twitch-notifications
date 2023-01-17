@@ -1,7 +1,7 @@
 import { LowDatabase } from '@crashmax/lowdb'
 import { singleton } from 'tsyringe'
+import { Tokens } from '../entities/tokens.js'
 import { DatabaseProvider } from './database.provider.js'
-import type { Tokens } from '../entities/tokens.js'
 
 @singleton()
 export class DatabaseTokensService {
@@ -14,7 +14,8 @@ export class DatabaseTokensService {
   }
 
   get tokens() {
-    return this.db.data
+    const tokens = this.db.data
+    return tokens ? new Tokens(tokens) : null
   }
 
   async writeTokens(tokens: Tokens) {

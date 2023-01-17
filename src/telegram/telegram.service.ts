@@ -8,7 +8,7 @@ import { EventSubService } from '../twitch/eventsub.service.js'
 export class TelegramService extends Bot {
   constructor(
     private readonly configService: ConfigService,
-    private readonly channelService: DatabaseChannelsService
+    private readonly dbChannelService: DatabaseChannelsService
   ) {
     super(configService.telegramTokens.botToken)
   }
@@ -17,7 +17,7 @@ export class TelegramService extends Bot {
     this.start({
       allowed_updates: ['message', 'callback_query'],
       onStart: async () => {
-        for (const channel of this.channelService.channels!) {
+        for (const channel of this.dbChannelService.channels!) {
           await eventsub.subscribeEvent(channel.channelId)
         }
       }

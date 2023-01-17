@@ -14,7 +14,7 @@ export class AuthService {
 
   constructor(
     private readonly configService: ConfigService,
-    private readonly tokensService: DatabaseTokensService
+    private readonly dbTokensService: DatabaseTokensService
   ) {}
 
   async init(): Promise<void> {
@@ -37,22 +37,13 @@ export class AuthService {
     return this._authProvider
   }
 
-  private async onRefreshToken({
-    accessToken,
-    refreshToken,
-    expiresIn,
-    obtainmentTimestamp,
-    scope
-  }: AccessToken): Promise<void> {
-    const tokens = new Tokens(
-      accessToken,
-      refreshToken!,
-      expiresIn!,
-      new Date(obtainmentTimestamp),
-      scope
-    )
+  private async onRefreshToken(accessToken: AccessToken): Promise<void> {
+    const tokens = new Tokens({
+      ...accessToken,
+      obtainmentTimestamp: new Date(accessToken.obtainmentTimestamp)
+    })
 
-    await this.tokensService.writeTokens(tokens)
+    await this.dbTokensService.writeTokens(tokens)
   }
 
   private async authTokens() {
@@ -64,13 +55,11 @@ export class AuthService {
       obtainmentTimestamp: 0
     }
 
-    const currentTokens = this.tokensService.tokens
+    const currentTokens = this.dbTokensService.tokens
     if (currentTokens) {
       const parsedTokens = {
         ...currentTokens,
-        obtainmentTimestamp: new Date(
-          currentTokens.obtainmentTimestamp
-        ).getTime()
+        obtainmentTimestamp: currentTokens.obtainmentTimestamp.getTime()
       }
 
       const tokensIsExpired = accessTokenIsExpired(parsedTokens)

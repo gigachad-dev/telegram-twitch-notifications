@@ -1,7 +1,17 @@
-export class Stream {
-  constructor(
-    public title: string | null,
-    public game: string | null,
-    public messageId: number
-  ) {}
+interface StreamSchema {
+  title: string | null
+  game: string | null
+  messageId: number
+}
+
+export class Stream implements StreamSchema {
+  title: string | null
+  game: string | null
+  messageId: number
+
+  constructor({ title, game, messageId }: StreamSchema) {
+    this.title = title
+    this.game = game
+    this.messageId = messageId
+  }
 }

@@ -1,9 +1,27 @@
 import type { Stream } from './stream.js'
 
-export class Channel {
-  constructor(
-    public channelId: string,
-    public topicId: number,
-    public stream: Stream | null = null
-  ) {}
+interface ChannelSchema {
+  channelId: string
+  displayName: string
+  chatId: number
+  stream?: Stream | null
+}
+
+export class Channel implements ChannelSchema {
+  channelId: string
+  displayName: string
+  chatId: number
+  stream: Stream | null
+
+  constructor({
+    channelId,
+    displayName,
+    chatId,
+    stream = null
+  }: ChannelSchema) {
+    this.channelId = channelId
+    this.displayName = displayName
+    this.chatId = chatId
+    this.stream = stream
+  }
 }

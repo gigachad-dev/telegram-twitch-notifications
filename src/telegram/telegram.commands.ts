@@ -4,6 +4,7 @@ import { CommandContext, Context } from 'grammy'
 import { singleton } from 'tsyringe'
 import { ConfigService } from '../config/config.service.js'
 import { DatabaseChannelsService } from '../database/channel.service.js'
+import { Channel } from '../entities/index.js'
 import { escapeText } from '../helpers.js'
 import { ApiService } from '../twitch/api.service.js'
 import { EventSubService } from '../twitch/eventsub.service.js'
@@ -13,10 +14,11 @@ import { TelegramService } from './telegram.service.js'
 @singleton()
 export class TelegramCommands {
   private updateStreamsMenu: Menu<Context>
+  menu: Menu<Context>
 
   constructor(
     private readonly configService: ConfigService,
-    private readonly channelService: DatabaseChannelsService,
+    private readonly dbChannelsService: DatabaseChannelsService,
     private readonly telegramService: TelegramService,
     private readonly telegramMiddleware: TelegramMiddleware,
     private readonly apiService: ApiService,
@@ -59,6 +61,32 @@ export class TelegramCommands {
 
     this.telegramService.use(this.updateStreamsMenu)
 
+    this.menu = new Menu('remove-channels-menu')
+    this.menu
+      .dynamic(async (ctx, range) => {
+        for (const channel of this.dbChannelsService.channels!) {
+          range.text(channel.displayName, (ctx) => {}).row()
+        }
+
+        return range
+      })
+      .text('⬅️', (ctx) => {
+        ctx.menu.update()
+      })
+      .text('➡️', (ctx) => {
+        ctx.menu.update()
+      })
+
+    this.telegramService.use(this.menu)
+
+    this.telegramService.command(
+      'test',
+      (ctx, next) => this.telegramMiddleware.isOwner(ctx, next),
+      (ctx) => {
+        ctx.reply('Test menu:', { reply_markup: this.menu })
+      }
+    )
+
     this.telegramService.command(
       'add',
       (ctx, next) => this.telegramMiddleware.isOwner(ctx, next),
@@ -94,17 +122,20 @@ export class TelegramCommands {
 
       const alreadySubscribedChannels: string[] = []
       for (const channel of channelsInfo) {
-        const channelEntity = this.channelService.getChannel(channel.id)
+        const channelEntity = this.dbChannelsService.getChannel(channel.id)
 
         if (channelEntity) {
           alreadySubscribedChannels.push(channel.id)
           continue
         }
 
-        await this.channelService.addChannel({
-          channelId: channel.id,
-          topicId: ctx.message?.message_thread_id || ctx.chat.id
-        })
+        await this.dbChannelsService.addChannel(
+          new Channel({
+            channelId: channel.id,
+            displayName: channel.displayName,
+            chatId: ctx.message?.message_thread_id || ctx.chat.id
+          })
+        )
 
         await this.eventSubService.subscribeEvent(channel.id)
       }
@@ -139,14 +170,14 @@ export class TelegramCommands {
         throw new Error(`Канал "${username}" не найден.`)
       }
 
-      const channelEntity = this.channelService.getChannel(channelInfo.id)
+      const channelEntity = this.dbChannelsService.getChannel(channelInfo.id)
       if (!channelEntity) {
         throw new Error(
           `Канал "${channelInfo.displayName}" не имеет подписки на уведомления.`
         )
       }
 
-      await this.channelService.deleteChannel(channelEntity.channelId)
+      await this.dbChannelsService.deleteChannel(channelEntity.channelId)
       await this.eventSubService.unsubscribeEvent(channelInfo.id)
       throw new Error(
         `Канал "${channelInfo.displayName}" отписан от уведомлений.`
@@ -172,7 +203,7 @@ export class TelegramCommands {
 
   private async fetchStreams(): Promise<string> {
     const users = await this.apiService.getUsersById(
-      this.channelService.channels!.map((channel) => channel.channelId)
+      this.dbChannelsService.channels!.map((channel) => channel.channelId)
     )
 
     const streams = await Object.values(users).reduce<Promise<string[]>>(

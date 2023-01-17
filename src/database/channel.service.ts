@@ -31,13 +31,13 @@ export class DatabaseChannelsService {
     await this.db.write()
   }
 
-  async addChannel({ channelId, topicId }: Omit<Channel, 'stream'>) {
-    this.db.data?.push(new Channel(channelId, topicId))
+  async addChannel(channel: Channel) {
+    this.db.data?.push(channel)
     await this.db.write()
   }
 
-  async addStream(channel: Channel, { title, game, messageId }: Stream) {
-    channel.stream = new Stream(title, game, messageId)
+  async addStream(channel: Channel, stream: Stream) {
+    channel.stream = stream
     await this.db.write()
   }
 

@@ -5,12 +5,12 @@ import { DatabaseTokensService } from '../database/tokens.service.js'
 @singleton()
 export class EntitiesProvider {
   constructor(
-    private readonly channelDb: DatabaseChannelsService,
-    private readonly tokensDb: DatabaseTokensService
+    private readonly channels: DatabaseChannelsService,
+    private readonly tokens: DatabaseTokensService
   ) {}
 
   async init(): Promise<void> {
-    await this.tokensDb.init()
-    await this.channelDb.init()
+    await this.tokens.init()
+    await this.channels.init()
   }
 }
