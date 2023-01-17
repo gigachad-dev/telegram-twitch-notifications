@@ -1,8 +1,9 @@
 import Express from 'express'
+import { webhookCallback } from 'grammy'
 import { singleton } from 'tsyringe'
 import { ConfigService } from '../config/config.service.js'
-import { DatabaseChannelsService } from '../database/channel.service.js'
 import { TelegramCommands } from '../telegram/telegram.commands.js'
+import { TelegramService } from '../telegram/telegram.service.js'
 import { EventSubService } from '../twitch/eventsub.service.js'
 
 @singleton()
@@ -11,12 +12,21 @@ export class ExpressService {
 
   constructor(
     private readonly configService: ConfigService,
-    private readonly channelsService: DatabaseChannelsService,
     private readonly eventSubService: EventSubService,
+    private readonly telegramService: TelegramService,
     private readonly telegramCommands: TelegramCommands
   ) {}
 
   async init(): Promise<void> {
+    if (!this.configService.isDev) {
+      this.server.use(Express.json())
+      this.server.use(
+        webhookCallback(this.telegramService, 'express', {
+          secretToken: this.configService.telegramTokens.botToken
+        })
+      )
+    }
+
     await this.eventSubService.init()
     await this.eventSubService.middleware.apply(this.server)
 

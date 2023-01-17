@@ -2,6 +2,7 @@ import { Menu } from '@grammyjs/menu'
 import dedent from 'dedent'
 import { CommandContext, Context } from 'grammy'
 import { singleton } from 'tsyringe'
+import { ConfigService } from '../config/config.service.js'
 import { DatabaseChannelsService } from '../database/channel.service.js'
 import { escapeText } from '../helpers.js'
 import { ApiService } from '../twitch/api.service.js'
@@ -11,8 +12,10 @@ import { TelegramService } from './telegram.service.js'
 
 @singleton()
 export class TelegramCommands {
-  updateStreamsMenu: Menu<Context>
+  private updateStreamsMenu: Menu<Context>
+
   constructor(
+    private readonly configService: ConfigService,
     private readonly channelService: DatabaseChannelsService,
     private readonly telegramService: TelegramService,
     private readonly telegramMiddleware: TelegramMiddleware,
@@ -21,6 +24,7 @@ export class TelegramCommands {
   ) {}
 
   async init(): Promise<void> {
+    await this.applyWebhook()
     await this.telegramService.api.setMyCommands([
       {
         command: 'streams',
@@ -44,7 +48,7 @@ export class TelegramCommands {
         })
 
         await ctx.editMessageText(
-          streams + `\n\n<i>Последнее обновление: ${date}</i>`,
+          `${streams}\n\n<i>Последнее обновление: ${date}</i>`,
           {
             parse_mode: 'HTML',
             disable_web_page_preview: true
@@ -166,7 +170,7 @@ export class TelegramCommands {
     })
   }
 
-  private async fetchStreams() {
+  private async fetchStreams(): Promise<string> {
     const users = await this.apiService.getUsersById(
       this.channelService.channels!.map((channel) => channel.channelId)
     )
@@ -196,5 +200,23 @@ export class TelegramCommands {
     )
 
     return streams.length ? streams.join('\n') : 'Подписки отсутствуют.'
+  }
+
+  private async applyWebhook(): Promise<void> {
+    if (this.configService.isDev) {
+      await this.telegramService.api.deleteWebhook({
+        drop_pending_updates: true
+      })
+    } else {
+      await this.telegramService.api.setWebhook(
+        `${this.configService.serverConfig.hostname}/webhook`,
+        {
+          allowed_updates: ['message', 'callback_query'],
+          secret_token: this.configService.telegramTokens.botToken,
+          drop_pending_updates: true,
+          max_connections: 1
+        }
+      )
+    }
   }
 }
