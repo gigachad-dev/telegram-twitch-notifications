@@ -14,7 +14,6 @@ import { TelegramService } from './telegram.service.js'
 @singleton()
 export class TelegramCommands {
   private updateStreamsMenu: Menu<Context>
-  menu: Menu<Context>
 
   constructor(
     private readonly configService: ConfigService,
@@ -60,32 +59,6 @@ export class TelegramCommands {
     )
 
     this.telegramService.use(this.updateStreamsMenu)
-
-    this.menu = new Menu('remove-channels-menu')
-    this.menu
-      .dynamic(async (ctx, range) => {
-        for (const channel of this.dbChannelsService.channels!) {
-          range.text(channel.displayName, (ctx) => {}).row()
-        }
-
-        return range
-      })
-      .text('⬅️', (ctx) => {
-        ctx.menu.update()
-      })
-      .text('➡️', (ctx) => {
-        ctx.menu.update()
-      })
-
-    this.telegramService.use(this.menu)
-
-    this.telegramService.command(
-      'test',
-      (ctx, next) => this.telegramMiddleware.isOwner(ctx, next),
-      (ctx) => {
-        ctx.reply('Test menu:', { reply_markup: this.menu })
-      }
-    )
 
     this.telegramService.command(
       'add',
