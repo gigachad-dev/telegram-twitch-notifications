@@ -172,7 +172,8 @@ export class TelegramCommands {
 
     await ctx.reply(streams, {
       parse_mode: 'HTML',
-      reply_markup: this.updateStreamsMenu,
+      // FIXME: Bad Request: query is too old and response timeout expired or query ID is invalid
+      // reply_markup: this.updateStreamsMenu,
       disable_web_page_preview: true,
       message_thread_id: ctx.message!.message_thread_id!
     })
