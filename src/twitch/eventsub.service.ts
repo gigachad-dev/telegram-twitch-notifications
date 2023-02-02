@@ -1,6 +1,7 @@
 import { ApiClient } from '@twurple/api'
 import { ClientCredentialsAuthProvider } from '@twurple/auth'
 import { EventSubMiddleware } from '@twurple/eventsub-http'
+import { differenceInSeconds } from 'date-fns'
 import { singleton } from 'tsyringe'
 import { ConfigService } from '../config/config.service.js'
 import { DatabaseChannelsService } from '../database/channels.service.js'
@@ -86,13 +87,12 @@ export class EventSubService {
     const channelEntity = this.dbChannelsService.data!.getChannel(
       event.broadcasterId
     )
-    if (!channelEntity?.stream) return
+    if (!channelEntity?.stream || !channelEntity.stream.endedAt) return
 
     const photoDescription = generateNotificationMessage({
       game: event.categoryName,
       title: event.streamTitle,
-      username: event.broadcasterDisplayName,
-      ended: false
+      username: event.broadcasterDisplayName
     })
 
     try {
@@ -105,14 +105,12 @@ export class EventSubService {
       console.log(err)
     }
 
-    channelEntity.addStream(
-      new Stream({
-        title: event.streamTitle,
-        game: event.categoryName,
-        messageId: channelEntity.stream.messageId,
-        createdAt: new Date()
-      })
-    )
+    const newStream = new Stream()
+    ;(newStream.title = event.streamTitle),
+      (newStream.game = event.categoryName),
+      (newStream.messageId = channelEntity.stream.messageId),
+      (newStream.createdAt = new Date())
+    channelEntity.addStream(newStream)
     this.dbChannelsService.write()
   }
 
@@ -145,38 +143,86 @@ export class EventSubService {
     this.sendMessage(channelInfo, channelEntity)
   }
 
+  private writeStream(
+    channelEntity: Channel,
+    channelInfo: HelixChannel,
+    messageId: number
+  ): void {
+    const newStream = new Stream()
+    ;(newStream.title = channelInfo.title),
+      (newStream.game = channelInfo.gameName),
+      (newStream.messageId = messageId),
+      (newStream.createdAt = new Date())
+    channelEntity.addStream(newStream)
+    this.dbChannelsService.write()
+  }
+
+  async editMessage(
+    channelInfo: HelixChannel,
+    channelEntity: Channel
+  ): Promise<void> {
+    const photoDescription = generateNotificationMessage({
+      game: channelInfo.gameName,
+      title: channelInfo.title,
+      username: channelInfo.displayName
+    })
+
+    try {
+      await this.telegramService.api.editMessageCaption(
+        this.configService.isDev
+          ? channelEntity.chatId
+          : this.configService.telegramTokens.chatId,
+        channelEntity.stream!.messageId,
+        { parse_mode: 'HTML', caption: photoDescription }
+      )
+    } catch (err) {
+      console.log(err)
+    } finally {
+      this.writeStream(
+        channelEntity,
+        channelInfo,
+        channelEntity.stream!.messageId
+      )
+    }
+  }
+
   async sendMessage(
     channelInfo: HelixChannel,
     channelEntity: Channel
   ): Promise<void> {
     const streamThumbnailUrl = this.apiService.getThumbnailUrl(channelInfo.name)
-    const photoDescription = generateNotificationMessage({
-      game: channelInfo.gameName,
-      title: channelInfo.title,
-      username: channelInfo.displayName,
-      ended: false
-    })
+
+    if (channelEntity.stream?.endedAt) {
+      const differenceSeconds = differenceInSeconds(
+        new Date(),
+        channelEntity.stream!.endedAt!
+      )
+      if (differenceSeconds <= 10) {
+        this.editMessage(channelInfo, channelEntity)
+        return
+      }
+    }
 
     const sendedMessage = await this.telegramService.api.sendPhoto(
-      this.configService.telegramTokens.chatId,
+      this.configService.isDev
+        ? channelEntity.chatId
+        : this.configService.telegramTokens.chatId,
       streamThumbnailUrl,
       {
         parse_mode: 'HTML',
-        caption: photoDescription,
-        message_thread_id: channelEntity.chatId,
+        caption: generateNotificationMessage({
+          game: channelInfo.gameName,
+          title: channelInfo.title,
+          username: channelInfo.displayName
+        }),
+        message_thread_id: this.configService.isDev
+          ? undefined
+          : channelEntity.chatId,
         disable_notification: this.configService.isDev
       }
     )
 
-    channelEntity.addStream(
-      new Stream({
-        title: channelInfo.title,
-        game: channelInfo.gameName,
-        messageId: sendedMessage.message_id,
-        createdAt: new Date()
-      })
-    )
-    this.dbChannelsService.write()
+    this.writeStream(channelEntity, channelInfo, sendedMessage.message_id)
   }
 
   private async onStreamOffline(
@@ -188,24 +234,30 @@ export class EventSubService {
     )
     if (!channelEntity?.stream) return
 
+    const endedAt = new Date()
+    const { createdAt } = channelEntity.stream
+
     const photoDescription = generateNotificationMessage({
       game: channelEntity.stream.game,
       title: channelEntity.stream.title,
       username: channelInfo.displayName,
-      ended: true
+      createdAt,
+      endedAt
     })
 
     try {
       await this.telegramService.api.editMessageCaption(
-        this.configService.telegramTokens.chatId,
-        channelEntity.stream.messageId,
+        this.configService.isDev
+          ? channelEntity.chatId
+          : this.configService.telegramTokens.chatId,
+        channelEntity.stream!.messageId,
         { parse_mode: 'HTML', caption: photoDescription }
       )
     } catch (err) {
       console.log(err)
     }
 
-    channelEntity.deleteStream()
+    channelEntity.updateEndedAt(endedAt)
     this.dbChannelsService.write()
   }
 }

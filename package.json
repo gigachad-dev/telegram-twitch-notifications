@@ -33,6 +33,7 @@
     "@twurple/eventsub": "^5.3.3",
     "@twurple/eventsub-http": "^5.3.3",
     "class-transformer": "^0.5.1",
+    "date-fns": "^2.29.3",
     "dedent": "^0.7.0",
     "dotenv": "^16.0.3",
     "envalid": "^7.3.1",

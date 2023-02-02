@@ -14,18 +14,11 @@ export class Channel implements ChannelSchema {
   chatId: number
 
   @Type(() => Stream)
-  stream: Stream | null
+  stream: Stream | null = null
 
-  constructor({
-    channelId,
-    displayName,
-    chatId,
-    stream = null
-  }: ChannelSchema) {
-    this.channelId = channelId
-    this.displayName = displayName
-    this.chatId = chatId
-    this.stream = stream
+  updateEndedAt(endedAt: Date | null = null): void {
+    if (!this.stream) return
+    this.stream.endedAt = endedAt
   }
 
   addStream(stream: Stream): void {
