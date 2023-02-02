@@ -1,5 +1,5 @@
 import Express from 'express'
-import { webhookCallback } from 'grammy'
+// import { webhookCallback } from 'grammy'
 import { singleton } from 'tsyringe'
 import { ConfigService } from '../config/config.service.js'
 import { TelegramCommands } from '../telegram/telegram.commands.js'
@@ -18,14 +18,12 @@ export class ExpressService {
   ) {}
 
   async init(): Promise<void> {
-    if (!this.configService.isDev) {
-      this.server.use(Express.json())
-      this.server.use(
-        webhookCallback(this.telegramService, 'express', {
-          secretToken: this.configService.telegramTokens.botToken
-        })
-      )
-    }
+    // if (!this.configService.isDev) {
+    //   this.server.use(Express.json())
+    //   this.server.use(
+    //     webhookCallback(this.telegramService, 'express')
+    //   )
+    // }
 
     await this.eventSubService.init()
     await this.eventSubService.middleware.apply(this.server)

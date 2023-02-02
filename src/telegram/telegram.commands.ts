@@ -25,7 +25,7 @@ export class TelegramCommands {
   ) {}
 
   async init(): Promise<void> {
-    await this.applyWebhook()
+    // await this.applyWebhook()
     await this.telegramService.api.setMyCommands([
       {
         command: 'streams',
@@ -211,21 +211,20 @@ export class TelegramCommands {
     return streams.length ? streams.join('\n') : 'Подписки отсутствуют.'
   }
 
-  private async applyWebhook(): Promise<void> {
-    if (this.configService.isDev) {
-      await this.telegramService.api.deleteWebhook({
-        drop_pending_updates: true
-      })
-    } else {
-      await this.telegramService.api.setWebhook(
-        `${this.configService.serverConfig.hostname}/webhook`,
-        {
-          allowed_updates: ['message', 'callback_query'],
-          secret_token: this.configService.telegramTokens.botToken,
-          drop_pending_updates: true,
-          max_connections: 1
-        }
-      )
-    }
-  }
+  // private async applyWebhook(): Promise<void> {
+  //   if (this.configService.isDev) {
+  //     await this.telegramService.api.deleteWebhook({
+  //       drop_pending_updates: true
+  //     })
+  //   } else {
+  //     await this.telegramService.api.setWebhook(
+  //       `${this.configService.serverConfig.hostname}/webhook`,
+  //       {
+  //         allowed_updates: ['message', 'callback_query'],
+  //         drop_pending_updates: true,
+  //         max_connections: 1
+  //       }
+  //     )
+  //   }
+  // }
 }
