@@ -1,0 +1,17 @@
+diff --git a/dist/index.d.ts b/dist/index.d.ts
+index ea0d45a233adebfcbd17b9dd6df1209bee3e4fba..c1cd82db143057653f1cfcac3e76c6877f19d799 100644
+--- a/dist/index.d.ts
++++ b/dist/index.d.ts
+@@ -1,2 +1,3 @@
+ export * from './node.js';
+ export * from './browser.js';
++export * from './node/database.js'
+diff --git a/dist/index.js b/dist/index.js
+index 02fe6a138de04732bc5cee57bfd2269a28cf06a7..1d29d588a94b674e9c333bbf959eb7b6b314f36b 100644
+--- a/dist/index.js
++++ b/dist/index.js
+@@ -1,3 +1,4 @@
+ export * from './node.js';
+ export * from './browser.js';
++export * from './node/database.js';
+ //# sourceMappingURL=index.js.map

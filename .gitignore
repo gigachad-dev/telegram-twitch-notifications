@@ -4,4 +4,4 @@
 .env
 .DS_Store
 *.sqlite
-db/*.json
+**/db

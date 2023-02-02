@@ -3,7 +3,7 @@ import dedent from 'dedent'
 import { CommandContext, Context } from 'grammy'
 import { singleton } from 'tsyringe'
 import { ConfigService } from '../config/config.service.js'
-import { DatabaseChannelsService } from '../database/channel.service.js'
+import { DatabaseChannelsService } from '../database/channels.service.js'
 import { Channel } from '../entities/index.js'
 import { escapeText } from '../helpers.js'
 import { ApiService } from '../twitch/api.service.js'
@@ -95,21 +95,23 @@ export class TelegramCommands {
 
       const alreadySubscribedChannels: string[] = []
       for (const channel of channelsInfo) {
-        const channelEntity = this.dbChannelsService.getChannel(channel.id)
+        const channelEntity = this.dbChannelsService.data!.getChannel(
+          channel.id
+        )
 
         if (channelEntity) {
           alreadySubscribedChannels.push(channel.id)
           continue
         }
 
-        await this.dbChannelsService.addChannel(
+        this.dbChannelsService.data?.addChannel(
           new Channel({
             channelId: channel.id,
             displayName: channel.displayName,
             chatId: ctx.message?.message_thread_id || ctx.chat.id
           })
         )
-
+        this.dbChannelsService.write()
         await this.eventSubService.subscribeEvent(channel.id)
       }
 
@@ -143,14 +145,17 @@ export class TelegramCommands {
         throw new Error(`Канал "${username}" не найден.`)
       }
 
-      const channelEntity = this.dbChannelsService.getChannel(channelInfo.id)
+      const channelEntity = this.dbChannelsService.data!.getChannel(
+        channelInfo.id
+      )
       if (!channelEntity) {
         throw new Error(
           `Канал "${channelInfo.displayName}" не имеет подписки на уведомления.`
         )
       }
 
-      await this.dbChannelsService.deleteChannel(channelEntity.channelId)
+      this.dbChannelsService.data!.deleteChannel(channelEntity.channelId)
+      this.dbChannelsService.write()
       await this.eventSubService.unsubscribeEvent(channelInfo.id)
       throw new Error(
         `Канал "${channelInfo.displayName}" отписан от уведомлений.`
@@ -176,7 +181,7 @@ export class TelegramCommands {
 
   private async fetchStreams(): Promise<string> {
     const users = await this.apiService.getUsersById(
-      this.dbChannelsService.channels!.map((channel) => channel.channelId)
+      this.dbChannelsService.data!.getChannelIds()
     )
 
     const streams = await Object.values(users).reduce<Promise<string[]>>(

@@ -3,7 +3,7 @@ import { ClientCredentialsAuthProvider } from '@twurple/auth'
 import { EventSubMiddleware } from '@twurple/eventsub-http'
 import { singleton } from 'tsyringe'
 import { ConfigService } from '../config/config.service.js'
-import { DatabaseChannelsService } from '../database/channel.service.js'
+import { DatabaseChannelsService } from '../database/channels.service.js'
 import { Channel, Stream } from '../entities/index.js'
 import { generateNotificationMessage } from '../helpers.js'
 import { NgrokHostname } from '../ngrok.js'
@@ -83,7 +83,9 @@ export class EventSubService {
   private async onUpdateChannel(
     event: EventSubChannelUpdateEvent
   ): Promise<void> {
-    const channelEntity = this.dbChannelsService.getChannel(event.broadcasterId)
+    const channelEntity = this.dbChannelsService.data!.getChannel(
+      event.broadcasterId
+    )
     if (!channelEntity?.stream) return
 
     const photoDescription = generateNotificationMessage({
@@ -103,14 +105,15 @@ export class EventSubService {
       console.log(err)
     }
 
-    await this.dbChannelsService.addStream(
-      channelEntity,
+    channelEntity.addStream(
       new Stream({
         title: event.streamTitle,
         game: event.categoryName,
-        messageId: channelEntity.stream.messageId
+        messageId: channelEntity.stream.messageId,
+        createdAt: new Date()
       })
     )
+    this.dbChannelsService.write()
   }
 
   async unsubscribeEvent(channelId: string): Promise<void> {
@@ -134,7 +137,9 @@ export class EventSubService {
     )
     if (!channelInfo) return
 
-    const channelEntity = this.dbChannelsService.getChannel(channelInfo.id)
+    const channelEntity = this.dbChannelsService.data!.getChannel(
+      channelInfo.id
+    )
     if (!channelEntity) return
 
     this.sendMessage(channelInfo, channelEntity)
@@ -163,21 +168,24 @@ export class EventSubService {
       }
     )
 
-    await this.dbChannelsService.addStream(
-      channelEntity,
+    channelEntity.addStream(
       new Stream({
         title: channelInfo.title,
         game: channelInfo.gameName,
-        messageId: sendedMessage.message_id
+        messageId: sendedMessage.message_id,
+        createdAt: new Date()
       })
     )
+    this.dbChannelsService.write()
   }
 
   private async onStreamOffline(
     event: EventSubStreamOfflineEvent
   ): Promise<void> {
     const channelInfo = await event.getBroadcaster()
-    const channelEntity = this.dbChannelsService.getChannel(channelInfo.id)
+    const channelEntity = this.dbChannelsService.data!.getChannel(
+      channelInfo.id
+    )
     if (!channelEntity?.stream) return
 
     const photoDescription = generateNotificationMessage({
@@ -197,6 +205,7 @@ export class EventSubService {
       console.log(err)
     }
 
-    await this.dbChannelsService.deleteStream(channelEntity)
+    channelEntity.deleteStream()
+    this.dbChannelsService.write()
   }
 }

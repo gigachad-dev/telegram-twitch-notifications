@@ -6,7 +6,7 @@ import {
 import { singleton } from 'tsyringe'
 import { ConfigService } from '../config/config.service.js'
 import { DatabaseTokensService } from '../database/tokens.service.js'
-import { Tokens } from '../entities/tokens.js'
+import { Token } from '../entities/tokens.js'
 
 @singleton()
 export class AuthService {
@@ -19,7 +19,7 @@ export class AuthService {
 
   async init(): Promise<void> {
     const { clientId, clientSecret } = this.configService.twitchTokens
-    const tokens = await this.authTokens()
+    const tokens = this.authTokens()
 
     this._authProvider = new RefreshingAuthProvider(
       {
@@ -37,16 +37,16 @@ export class AuthService {
     return this._authProvider
   }
 
-  private async onRefreshToken(accessToken: AccessToken): Promise<void> {
-    const tokens = new Tokens({
+  private onRefreshToken(accessToken: AccessToken): void {
+    const tokens = new Token({
       ...accessToken,
       obtainmentTimestamp: new Date(accessToken.obtainmentTimestamp)
     })
 
-    await this.dbTokensService.writeTokens(tokens)
+    this.dbTokensService.write(tokens)
   }
 
-  private async authTokens() {
+  private authTokens() {
     const { accessToken, refreshToken } = this.configService.twitchTokens
     const initialTokens = {
       accessToken,

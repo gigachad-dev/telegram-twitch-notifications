@@ -1,7 +1,7 @@
 import { Bot } from 'grammy'
 import { singleton } from 'tsyringe'
 import { ConfigService } from '../config/config.service.js'
-import { DatabaseChannelsService } from '../database/channel.service.js'
+import { DatabaseChannelsService } from '../database/channels.service.js'
 import { EventSubService } from '../twitch/eventsub.service.js'
 
 @singleton()
@@ -17,7 +17,7 @@ export class TelegramService extends Bot {
     this.start({
       allowed_updates: ['message', 'callback_query'],
       onStart: async () => {
-        for (const channel of this.dbChannelService.channels!) {
+        for (const channel of this.dbChannelService.data!.channels) {
           await eventsub.subscribeEvent(channel.channelId)
         }
       }

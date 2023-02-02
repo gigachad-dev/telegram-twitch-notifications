@@ -1,7 +1,10 @@
+import { Type } from 'class-transformer'
+
 interface StreamSchema {
   title: string | null
   game: string | null
   messageId: number
+  createdAt: Date
 }
 
 export class Stream implements StreamSchema {
@@ -9,9 +12,13 @@ export class Stream implements StreamSchema {
   game: string | null
   messageId: number
 
-  constructor({ title, game, messageId }: StreamSchema) {
+  @Type(() => Date)
+  createdAt: Date
+
+  constructor({ title, game, messageId, createdAt }: StreamSchema) {
     this.title = title
     this.game = game
     this.messageId = messageId
+    this.createdAt = createdAt
   }
 }

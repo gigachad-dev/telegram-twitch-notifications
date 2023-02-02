@@ -1,7 +1,8 @@
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { LowProvider } from '@crashmax/lowdb'
+import { NodeProvider } from 'stenodb/node'
 import { singleton } from 'tsyringe'
+import { ConfigService } from '../config/config.service.js'
 
 const lowdbPath = resolve(
   dirname(fileURLToPath(import.meta.url)),
@@ -11,8 +12,11 @@ const lowdbPath = resolve(
 )
 
 @singleton()
-export class DatabaseProvider extends LowProvider {
-  constructor() {
-    super(lowdbPath)
+export class DatabaseProvider extends NodeProvider {
+  constructor(private readonly configService: ConfigService) {
+    super({
+      path: lowdbPath,
+      logger: { enabled: false }
+    })
   }
 }
