@@ -60,6 +60,12 @@ export class EventSubService {
     return this.eventsub
   }
 
+  private getChatId(channelEntity: Channel): number {
+    return this.configService.isDev
+      ? channelEntity.chatId
+      : this.configService.telegramTokens.chatId
+  }
+
   async subscribeEvent(channelId: string): Promise<void> {
     if (this.events.has(channelId)) return
 
@@ -87,7 +93,7 @@ export class EventSubService {
     const channelEntity = this.dbChannelsService.data!.getChannel(
       event.broadcasterId
     )
-    if (!channelEntity?.stream || !channelEntity.stream.endedAt) return
+    if (!channelEntity?.stream) return
 
     const photoDescription = generateNotificationMessage({
       game: event.categoryName,
@@ -97,7 +103,7 @@ export class EventSubService {
 
     try {
       await this.telegramService.api.editMessageCaption(
-        this.configService.telegramTokens.chatId,
+        this.getChatId(channelEntity),
         channelEntity.stream.messageId,
         { parse_mode: 'HTML', caption: photoDescription }
       )
@@ -105,13 +111,11 @@ export class EventSubService {
       console.log(err)
     }
 
-    const newStream = new Stream()
-    ;(newStream.title = event.streamTitle),
-      (newStream.game = event.categoryName),
-      (newStream.messageId = channelEntity.stream.messageId),
-      (newStream.createdAt = new Date())
-    channelEntity.addStream(newStream)
-    this.dbChannelsService.write()
+    this.writeStream(channelEntity, {
+      title: event.streamTitle,
+      game: event.categoryName,
+      messageId: channelEntity.stream.messageId
+    })
   }
 
   async unsubscribeEvent(channelId: string): Promise<void> {
@@ -145,15 +149,14 @@ export class EventSubService {
 
   private writeStream(
     channelEntity: Channel,
-    channelInfo: HelixChannel,
-    messageId: number
+    { title, game, messageId }: Omit<Stream, 'createdAt' | 'endedAt'>
   ): void {
-    const newStream = new Stream()
-    ;(newStream.title = channelInfo.title),
-      (newStream.game = channelInfo.gameName),
-      (newStream.messageId = messageId),
-      (newStream.createdAt = new Date())
-    channelEntity.addStream(newStream)
+    const stream = new Stream()
+    stream.title = title
+    stream.game = game
+    stream.messageId = messageId
+    stream.createdAt = new Date()
+    channelEntity.addStream(stream)
     this.dbChannelsService.write()
   }
 
@@ -169,20 +172,18 @@ export class EventSubService {
 
     try {
       await this.telegramService.api.editMessageCaption(
-        this.configService.isDev
-          ? channelEntity.chatId
-          : this.configService.telegramTokens.chatId,
+        this.getChatId(channelEntity),
         channelEntity.stream!.messageId,
         { parse_mode: 'HTML', caption: photoDescription }
       )
     } catch (err) {
       console.log(err)
     } finally {
-      this.writeStream(
-        channelEntity,
-        channelInfo,
-        channelEntity.stream!.messageId
-      )
+      this.writeStream(channelEntity, {
+        title: channelInfo.title,
+        game: channelInfo.gameName,
+        messageId: channelEntity.stream!.messageId
+      })
     }
   }
 
@@ -197,16 +198,14 @@ export class EventSubService {
         new Date(),
         channelEntity.stream!.endedAt!
       )
-      if (differenceSeconds <= 10) {
+      if (differenceSeconds <= this.configService.minStreamDuration) {
         this.editMessage(channelInfo, channelEntity)
         return
       }
     }
 
     const sendedMessage = await this.telegramService.api.sendPhoto(
-      this.configService.isDev
-        ? channelEntity.chatId
-        : this.configService.telegramTokens.chatId,
+      this.getChatId(channelEntity),
       streamThumbnailUrl,
       {
         parse_mode: 'HTML',
@@ -222,7 +221,11 @@ export class EventSubService {
       }
     )
 
-    this.writeStream(channelEntity, channelInfo, sendedMessage.message_id)
+    this.writeStream(channelEntity, {
+      title: channelInfo.title,
+      game: channelInfo.gameName,
+      messageId: sendedMessage.message_id
+    })
   }
 
   private async onStreamOffline(
@@ -247,9 +250,7 @@ export class EventSubService {
 
     try {
       await this.telegramService.api.editMessageCaption(
-        this.configService.isDev
-          ? channelEntity.chatId
-          : this.configService.telegramTokens.chatId,
+        this.getChatId(channelEntity),
         channelEntity.stream!.messageId,
         { parse_mode: 'HTML', caption: photoDescription }
       )

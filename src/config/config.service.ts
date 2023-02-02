@@ -5,6 +5,10 @@ import { ConfigProvider } from './config.provider.js'
 export class ConfigService {
   constructor(private readonly configProvider: ConfigProvider) {}
 
+  get minStreamDuration(): number {
+    return 3600
+  }
+
   get isDev(): boolean {
     return process.env['NODE_ENV'] === 'development'
   }
