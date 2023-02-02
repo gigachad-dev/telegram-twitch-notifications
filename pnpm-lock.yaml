@@ -18,6 +18,7 @@ specifiers:
   '@types/node': ^18.11.18
   class-transformer: ^0.5.1
   cross-env: ^7.0.3
+  date-fns: ^2.29.3
   dedent: ^0.7.0
   del-cli: ^5.0.0
   dotenv: ^16.0.3
@@ -39,6 +40,7 @@ dependencies:
   '@twurple/eventsub': 5.3.3_@twurple+api@5.3.3
   '@twurple/eventsub-http': 5.3.3_@twurple+api@5.3.3
   class-transformer: 0.5.1
+  date-fns: 2.29.3
   dedent: 0.7.0
   dotenv: 16.0.3
   envalid: 7.3.1
@@ -1060,6 +1062,11 @@ packages:
       shebang-command: 2.0.0
       which: 2.0.2
     dev: true
+
+  /date-fns/2.29.3:
+    resolution: {integrity: sha512-dDCnyH2WnnKusqvZZ6+jA1O51Ibt8ZMRNkDZdyAyK4YfbDwa/cEmuztzG5pk6hqlp9aSBPYcjOlktquahGwGeA==}
+    engines: {node: '>=0.11'}
+    dev: false
 
   /debug/2.6.9:
     resolution: {integrity: sha512-bC7ElrdJaJnPbAP+1EotYvqZsb3ecl5wi6Bfi6BJTUcNowp6cvspg0jXznRTKDjm/E7AdgFBVeAPVMNcKGsHMA==}

@@ -5,14 +5,18 @@ import type { NodeAdapter } from 'stenodb'
 
 @singleton()
 export class DatabaseChannelsService {
-  private readonly db: NodeAdapter<Channels>
+  private db: NodeAdapter<Channels>
 
-  constructor(private readonly databaseProvider: DatabaseProvider) {
+  constructor(private readonly databaseProvider: DatabaseProvider) {}
+
+  async init(): Promise<void> {
     this.db = this.databaseProvider.createDatabase({
       name: 'channels',
       entity: Channels,
       initialData: new Channels()
     })
+
+    return Promise.resolve()
   }
 
   get data() {

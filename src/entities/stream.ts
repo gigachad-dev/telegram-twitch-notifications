@@ -5,6 +5,7 @@ interface StreamSchema {
   game: string | null
   messageId: number
   createdAt: Date
+  endedAt?: Date | null
 }
 
 export class Stream implements StreamSchema {
@@ -15,10 +16,6 @@ export class Stream implements StreamSchema {
   @Type(() => Date)
   createdAt: Date
 
-  constructor({ title, game, messageId, createdAt }: StreamSchema) {
-    this.title = title
-    this.game = game
-    this.messageId = messageId
-    this.createdAt = createdAt
-  }
+  @Type(() => Date)
+  endedAt: Date | null = null
 }

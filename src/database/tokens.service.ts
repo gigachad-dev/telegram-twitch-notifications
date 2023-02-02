@@ -15,16 +15,15 @@ export class DatabaseTokensService {
       entity: Tokens,
       initialData: null
     })
-
     return Promise.resolve()
   }
 
   get tokens() {
-    return this.db.data!.tokens
+    return this.db.read().tokens
   }
 
-  write(tokens: Token) {
-    this.db.data!.tokens = tokens
+  write(tokens: Tokens) {
+    this.db.data = tokens
     this.db.write()
   }
 }

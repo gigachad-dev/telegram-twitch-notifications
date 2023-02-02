@@ -1,3 +1,4 @@
+import { formatDuration, intervalToDuration } from 'date-fns'
 import dedent from 'dedent'
 
 export function escapeText(text: string): string {
@@ -8,16 +9,24 @@ export function generateNotificationMessage({
   title,
   game,
   username,
-  ended
+  createdAt,
+  endedAt
 }: {
   title: string | null
   game: string | null
   username: string
-  ended: boolean
+  createdAt?: Date | null
+  endedAt?: Date
 }): string {
   return dedent`
-    ${ended ? '🔴' : '🟢'} ${title ? escapeText(title) : username}${
+    ${createdAt ? '🔴' : '🟢'} ${title ? escapeText(title) : username}${
     game ? ` — ${game}` : ''
+  }${
+    createdAt && endedAt
+      ? `\n🕒 ${formatDuration(
+          intervalToDuration({ start: createdAt, end: endedAt })
+        )}`
+      : ''
   }
     https://twitch.tv/${username.toLowerCase()}
   `

@@ -104,13 +104,12 @@ export class TelegramCommands {
           continue
         }
 
-        this.dbChannelsService.data?.addChannel(
-          new Channel({
-            channelId: channel.id,
-            displayName: channel.displayName,
-            chatId: ctx.message?.message_thread_id || ctx.chat.id
-          })
-        )
+        const newChannel = new Channel()
+        newChannel.channelId = channel.id
+        newChannel.displayName = channel.displayName
+        newChannel.chatId = ctx.message?.message_thread_id || ctx.chat.id
+
+        this.dbChannelsService.data?.addChannel(newChannel)
         this.dbChannelsService.write()
         await this.eventSubService.subscribeEvent(channel.id)
       }

@@ -6,7 +6,7 @@ import {
 import { singleton } from 'tsyringe'
 import { ConfigService } from '../config/config.service.js'
 import { DatabaseTokensService } from '../database/tokens.service.js'
-import { Token } from '../entities/tokens.js'
+import { Tokens } from '../entities/tokens.js'
 
 @singleton()
 export class AuthService {
@@ -38,7 +38,7 @@ export class AuthService {
   }
 
   private onRefreshToken(accessToken: AccessToken): void {
-    const tokens = new Token({
+    const tokens = new Tokens({
       ...accessToken,
       obtainmentTimestamp: new Date(accessToken.obtainmentTimestamp)
     })
