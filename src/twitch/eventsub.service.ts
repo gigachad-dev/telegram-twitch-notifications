@@ -17,6 +17,7 @@ import type {
   EventSubStreamOnlineEvent,
   EventSubSubscription
 } from '@twurple/eventsub'
+import type { GrammyError } from 'grammy'
 
 interface ChannelEvents {
   onlineEvent: EventSubSubscription<unknown>
@@ -105,15 +106,20 @@ export class EventSubService {
   private async onUpdateChannel(
     event: EventSubChannelUpdateEvent
   ): Promise<void> {
+    const channelInfo = await this.apiService.getChannelInfoById(
+      event.broadcasterId
+    )
+    if (!channelInfo) return
+
     const channelEntity = this.dbChannelsService.data!.getChannel(
       event.broadcasterId
     )
     if (!channelEntity?.stream || channelEntity.stream.endedAt) return
 
     const photoDescription = generateNotificationMessage({
-      game: event.categoryName,
-      title: event.streamTitle,
-      username: event.broadcasterDisplayName
+      game: channelInfo.gameName,
+      title: channelInfo.title,
+      username: channelInfo.displayName
     })
 
     try {
@@ -123,7 +129,11 @@ export class EventSubService {
         { parse_mode: 'HTML', caption: photoDescription }
       )
     } catch (err) {
-      console.log(err)
+      console.log('editMessage:', err)
+
+      if ((err as GrammyError)?.error_code === 400) {
+        this.sendMessage(channelInfo, channelEntity)
+      }
     }
 
     channelEntity.updateStream({
@@ -182,7 +192,11 @@ export class EventSubService {
         { parse_mode: 'HTML', caption: photoDescription }
       )
     } catch (err) {
-      console.log(err)
+      console.log('editMessage:', err)
+
+      if ((err as GrammyError)?.error_code === 400) {
+        this.sendMessage(channelInfo, channelEntity)
+      }
     }
 
     channelEntity.updateStream({
@@ -249,7 +263,7 @@ export class EventSubService {
         { parse_mode: 'HTML', caption: photoDescription }
       )
     } catch (err) {
-      console.log(err)
+      console.log('onStreamOffline:', err)
     }
 
     channelEntity.deleteStream()
