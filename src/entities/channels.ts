@@ -18,9 +18,9 @@ export class Channel implements ChannelSchema {
   stream: Stream | null = null
 
   updateStream(stream: Partial<StreamSchema>): void {
+    if (!this.stream) stream = {}
     const newStream = new Stream()
-    Object.assign(newStream, stream)
-    this.stream = newStream
+    Object.assign(this.stream!, newStream)
   }
 
   deleteStream(): void {
