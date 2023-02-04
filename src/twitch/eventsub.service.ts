@@ -201,7 +201,8 @@ export class EventSubService {
 
     channelEntity.updateStream({
       title: channelInfo.title,
-      game: channelInfo.gameName
+      game: channelInfo.gameName,
+      endedAt: null
     })
 
     this.dbChannelsService.write()
@@ -248,12 +249,13 @@ export class EventSubService {
     )
     if (!channelEntity?.stream || channelEntity.stream.endedAt) return
 
+    const endedAt = new Date()
     const photoDescription = generateNotificationMessage({
       game: channelEntity.stream.game,
       title: channelEntity.stream.title,
       username: channelInfo.displayName,
       createdAt: channelEntity.stream.createdAt,
-      endedAt: new Date()
+      endedAt
     })
 
     try {
@@ -266,7 +268,7 @@ export class EventSubService {
       console.log('onStreamOffline:', err)
     }
 
-    channelEntity.deleteStream()
+    channelEntity.updateStream({ endedAt })
     this.dbChannelsService.write()
   }
 }
