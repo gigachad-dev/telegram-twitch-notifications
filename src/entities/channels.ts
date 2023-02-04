@@ -1,5 +1,6 @@
 import { Type } from 'class-transformer'
 import { Stream } from './stream.js'
+import type { StreamSchema } from './stream.js'
 
 interface ChannelSchema {
   channelId: string
@@ -16,17 +17,15 @@ export class Channel implements ChannelSchema {
   @Type(() => Stream)
   stream: Stream | null = null
 
-  updateEndedAt(endedAt: Date | null = null): void {
-    if (!this.stream) return
-    this.stream.endedAt = endedAt
-  }
-
-  addStream(stream: Stream): void {
-    this.stream = stream
+  updateStream(stream: Partial<StreamSchema>): void {
+    const newStream = new Stream()
+    Object.assign(newStream, stream)
+    this.stream = newStream
   }
 
   deleteStream(): void {
-    this.stream = null
+    if (!this.stream) return
+    this.stream.endedAt = null
   }
 }
 

@@ -5,7 +5,7 @@ import { differenceInSeconds } from 'date-fns'
 import { singleton } from 'tsyringe'
 import { ConfigService } from '../config/config.service.js'
 import { DatabaseChannelsService } from '../database/channels.service.js'
-import { Channel, Stream } from '../entities/index.js'
+import { Channel } from '../entities/index.js'
 import { generateNotificationMessage } from '../helpers.js'
 import { NgrokHostname } from '../ngrok.js'
 import { TelegramService } from '../telegram/telegram.service.js'
@@ -66,6 +66,10 @@ export class EventSubService {
       : this.configService.telegramTokens.chatId
   }
 
+  private getThreadId(channelEntity: Channel): number | undefined {
+    return this.configService.isDev ? undefined : channelEntity.chatId
+  }
+
   async subscribeEvent(channelId: string): Promise<void> {
     if (this.events.has(channelId)) return
 
@@ -87,13 +91,24 @@ export class EventSubService {
     this.events.set(channelId, { onlineEvent, offlineEvent, updateEvent })
   }
 
+  async unsubscribeEvent(channelId: string): Promise<void> {
+    const events = this.events.get(channelId)
+    if (!events) return
+
+    await events.onlineEvent.stop()
+    await events.offlineEvent.stop()
+    await events.updateEvent.stop()
+
+    this.events.delete(channelId)
+  }
+
   private async onUpdateChannel(
     event: EventSubChannelUpdateEvent
   ): Promise<void> {
     const channelEntity = this.dbChannelsService.data!.getChannel(
       event.broadcasterId
     )
-    if (!channelEntity?.stream) return
+    if (!channelEntity?.stream || channelEntity.stream.endedAt) return
 
     const photoDescription = generateNotificationMessage({
       game: event.categoryName,
@@ -111,22 +126,12 @@ export class EventSubService {
       console.log(err)
     }
 
-    this.writeStream(channelEntity, {
+    channelEntity.updateStream({
       title: event.streamTitle,
-      game: event.categoryName,
-      messageId: channelEntity.stream.messageId
+      game: event.categoryName
     })
-  }
 
-  async unsubscribeEvent(channelId: string): Promise<void> {
-    const events = this.events.get(channelId)
-    if (!events) return
-
-    await events.onlineEvent.stop()
-    await events.offlineEvent.stop()
-    await events.updateEvent.stop()
-
-    this.events.delete(channelId)
+    this.dbChannelsService.write()
   }
 
   private async onStreamOnline(
@@ -144,20 +149,20 @@ export class EventSubService {
     )
     if (!channelEntity) return
 
-    this.sendMessage(channelInfo, channelEntity)
-  }
+    if (channelEntity.stream?.endedAt) {
+      const createdAt = new Date()
+      const differenceSeconds = differenceInSeconds(
+        createdAt,
+        channelEntity.stream.endedAt
+      )
 
-  private writeStream(
-    channelEntity: Channel,
-    { title, game, messageId }: Omit<Stream, 'createdAt' | 'endedAt'>
-  ): void {
-    const stream = new Stream()
-    stream.title = title
-    stream.game = game
-    stream.messageId = messageId
-    stream.createdAt = new Date()
-    channelEntity.addStream(stream)
-    this.dbChannelsService.write()
+      if (differenceSeconds <= this.configService.minStreamDuration) {
+        this.editMessage(channelInfo, channelEntity)
+        return
+      }
+    }
+
+    this.sendMessage(channelInfo, channelEntity)
   }
 
   async editMessage(
@@ -178,13 +183,14 @@ export class EventSubService {
       )
     } catch (err) {
       console.log(err)
-    } finally {
-      this.writeStream(channelEntity, {
-        title: channelInfo.title,
-        game: channelInfo.gameName,
-        messageId: channelEntity.stream!.messageId
-      })
     }
+
+    channelEntity.updateStream({
+      title: channelInfo.title,
+      game: channelInfo.gameName
+    })
+
+    this.dbChannelsService.write()
   }
 
   async sendMessage(
@@ -192,17 +198,6 @@ export class EventSubService {
     channelEntity: Channel
   ): Promise<void> {
     const streamThumbnailUrl = this.apiService.getThumbnailUrl(channelInfo.name)
-
-    if (channelEntity.stream?.endedAt) {
-      const differenceSeconds = differenceInSeconds(
-        new Date(),
-        channelEntity.stream!.endedAt!
-      )
-      if (differenceSeconds <= this.configService.minStreamDuration) {
-        this.editMessage(channelInfo, channelEntity)
-        return
-      }
-    }
 
     const sendedMessage = await this.telegramService.api.sendPhoto(
       this.getChatId(channelEntity),
@@ -214,18 +209,20 @@ export class EventSubService {
           title: channelInfo.title,
           username: channelInfo.displayName
         }),
-        message_thread_id: this.configService.isDev
-          ? undefined
-          : channelEntity.chatId,
+        message_thread_id: this.getThreadId(channelEntity),
         disable_notification: this.configService.isDev
       }
     )
 
-    this.writeStream(channelEntity, {
+    channelEntity.updateStream({
       title: channelInfo.title,
       game: channelInfo.gameName,
-      messageId: sendedMessage.message_id
+      messageId: sendedMessage.message_id,
+      createdAt: new Date(),
+      endedAt: null
     })
+
+    this.dbChannelsService.write()
   }
 
   private async onStreamOffline(
@@ -235,17 +232,14 @@ export class EventSubService {
     const channelEntity = this.dbChannelsService.data!.getChannel(
       channelInfo.id
     )
-    if (!channelEntity?.stream) return
-
-    const endedAt = new Date()
-    const { createdAt } = channelEntity.stream
+    if (!channelEntity?.stream || channelEntity.stream.endedAt) return
 
     const photoDescription = generateNotificationMessage({
       game: channelEntity.stream.game,
       title: channelEntity.stream.title,
       username: channelInfo.displayName,
-      createdAt,
-      endedAt
+      createdAt: channelEntity.stream.createdAt,
+      endedAt: new Date()
     })
 
     try {
@@ -258,7 +252,7 @@ export class EventSubService {
       console.log(err)
     }
 
-    channelEntity.updateEndedAt(endedAt)
+    channelEntity.deleteStream()
     this.dbChannelsService.write()
   }
 }

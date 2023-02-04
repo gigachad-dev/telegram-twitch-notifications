@@ -1,6 +1,6 @@
 import { Type } from 'class-transformer'
 
-interface StreamSchema {
+export interface StreamSchema {
   title: string | null
   game: string | null
   messageId: number
