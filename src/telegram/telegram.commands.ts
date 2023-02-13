@@ -25,7 +25,6 @@ export class TelegramCommands {
   ) {}
 
   async init(): Promise<void> {
-    // await this.applyWebhook()
     await this.telegramService.api.setMyCommands([
       {
         command: 'streams',
