@@ -37,7 +37,7 @@ export class AuthService {
     return this._authProvider
   }
 
-  private onRefreshToken(accessToken: AccessToken): void {
+  private async onRefreshToken(accessToken: AccessToken): Promise<void> {
     const tokens = new Tokens(
       accessToken.accessToken,
       accessToken.refreshToken,
@@ -46,7 +46,7 @@ export class AuthService {
       accessToken.scope
     )
 
-    this.dbTokensService.write(tokens)
+    await this.dbTokensService.write(tokens)
   }
 
   private authTokens() {

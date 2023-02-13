@@ -153,7 +153,7 @@ export class TelegramCommands {
       }
 
       this.dbChannelsService.data!.deleteChannel(channelEntity.channelId)
-      this.dbChannelsService.write()
+      await this.dbChannelsService.write()
       await this.eventSubService.unsubscribeEvent(channelInfo.id)
       throw new Error(
         `Канал "${channelInfo.displayName}" отписан от уведомлений.`

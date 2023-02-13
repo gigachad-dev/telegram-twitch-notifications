@@ -141,7 +141,7 @@ export class EventSubService {
       game: event.categoryName
     })
 
-    this.dbChannelsService.write()
+    await this.dbChannelsService.write()
   }
 
   private async onStreamOnline(
@@ -205,7 +205,7 @@ export class EventSubService {
       endedAt: null
     })
 
-    this.dbChannelsService.write()
+    await this.dbChannelsService.write()
   }
 
   async sendMessage(
@@ -237,7 +237,7 @@ export class EventSubService {
       endedAt: null
     })
 
-    this.dbChannelsService.write()
+    await this.dbChannelsService.write()
   }
 
   private async onStreamOffline(
@@ -269,6 +269,6 @@ export class EventSubService {
     }
 
     channelEntity.updateStream({ endedAt })
-    this.dbChannelsService.write()
+    await this.dbChannelsService.write()
   }
 }
