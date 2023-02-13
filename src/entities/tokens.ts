@@ -5,7 +5,7 @@ interface TokensSchema extends Omit<AccessToken, 'obtainmentTimestamp'> {
   obtainmentTimestamp: Date
 }
 
-export class Token implements TokensSchema {
+export class Tokens implements TokensSchema {
   accessToken: string
   refreshToken: string | null
   expiresIn: number | null
@@ -13,13 +13,18 @@ export class Token implements TokensSchema {
   @Type(() => Date)
   obtainmentTimestamp: Date
   scope: string[]
-}
 
-export class Tokens {
-  @Type(() => Token)
-  tokens: Token | null = null
-
-  constructor(tokens: Token | null = null) {
-    this.tokens = tokens
+  constructor(
+    accessToken: string,
+    refreshToken: string | null,
+    expiresIn: number | null,
+    obtainmentTimestamp: Date,
+    scope: string[]
+  ) {
+    this.accessToken = accessToken
+    this.refreshToken = refreshToken
+    this.expiresIn = expiresIn
+    this.obtainmentTimestamp = obtainmentTimestamp
+    this.scope = scope
   }
 }

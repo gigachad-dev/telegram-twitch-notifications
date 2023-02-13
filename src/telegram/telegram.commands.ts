@@ -110,7 +110,7 @@ export class TelegramCommands {
         newChannel.chatId = ctx.message?.message_thread_id || ctx.chat.id
 
         this.dbChannelsService.data?.addChannel(newChannel)
-        this.dbChannelsService.write()
+        await this.dbChannelsService.write()
         await this.eventSubService.subscribeEvent(channel.id)
       }
 

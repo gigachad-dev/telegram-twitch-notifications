@@ -38,10 +38,13 @@ export class AuthService {
   }
 
   private onRefreshToken(accessToken: AccessToken): void {
-    const tokens = new Tokens({
-      ...accessToken,
-      obtainmentTimestamp: new Date(accessToken.obtainmentTimestamp)
-    })
+    const tokens = new Tokens(
+      accessToken.accessToken,
+      accessToken.refreshToken,
+      accessToken.expiresIn,
+      new Date(accessToken.obtainmentTimestamp),
+      accessToken.scope
+    )
 
     this.dbTokensService.write(tokens)
   }
@@ -55,7 +58,7 @@ export class AuthService {
       obtainmentTimestamp: 0
     }
 
-    const currentTokens = this.dbTokensService.tokens
+    const currentTokens = this.dbTokensService.data
     if (currentTokens) {
       const parsedTokens = {
         ...currentTokens,

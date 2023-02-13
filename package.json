@@ -28,6 +28,7 @@
   },
   "dependencies": {
     "@grammyjs/menu": "^1.1.2",
+    "@stenodb/node": "^3.3.0",
     "@twurple/api": "^5.3.3",
     "@twurple/auth": "^5.3.3",
     "@twurple/eventsub": "^5.3.3",
@@ -41,12 +42,6 @@
     "grammy": "^1.13.1",
     "ngrok": "^4.3.3",
     "reflect-metadata": "^0.1.13",
-    "stenodb": "^1.0.0",
     "tsyringe": "^4.7.0"
-  },
-  "pnpm": {
-    "patchedDependencies": {
-      "stenodb@1.0.0": "patches/stenodb@1.0.0.patch"
-    }
   }
 }

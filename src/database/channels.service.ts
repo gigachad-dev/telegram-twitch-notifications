@@ -1,29 +1,26 @@
+import { AsyncAdapter } from '@stenodb/node'
 import { singleton } from 'tsyringe'
 import { Channels } from '../entities/index.js'
 import { DatabaseProvider } from './database.provider.js'
-import type { NodeAdapter } from 'stenodb'
+import type { Steno } from '@stenodb/node'
 
 @singleton()
 export class DatabaseChannelsService {
-  private db: NodeAdapter<Channels>
+  private db: Steno.NodeProvider<Channels>
 
   constructor(private readonly databaseProvider: DatabaseProvider) {}
 
   async init(): Promise<void> {
-    this.db = this.databaseProvider.createDatabase({
-      name: 'channels',
-      entity: Channels,
-      initialData: new Channels()
-    })
-
-    return Promise.resolve()
+    const adapter = new AsyncAdapter('channels', Channels, new Channels())
+    this.db = await this.databaseProvider.create(adapter)
+    await this.db.read()
   }
 
   get data() {
     return this.db.data
   }
 
-  write() {
-    this.db.write()
+  async write() {
+    await this.db.write()
   }
 }
