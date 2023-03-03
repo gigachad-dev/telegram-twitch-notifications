@@ -1,5 +1,5 @@
 import { ApiClient } from '@twurple/api'
-import { ClientCredentialsAuthProvider } from '@twurple/auth'
+import { AppTokenAuthProvider } from '@twurple/auth'
 import { EventSubMiddleware } from '@twurple/eventsub-http'
 import { differenceInSeconds } from 'date-fns'
 import { singleton } from 'tsyringe'
@@ -16,13 +16,13 @@ import type {
   EventSubStreamOfflineEvent,
   EventSubStreamOnlineEvent,
   EventSubSubscription
-} from '@twurple/eventsub'
+} from '@twurple/eventsub-base'
 import type { GrammyError } from 'grammy'
 
 interface ChannelEvents {
-  onlineEvent: EventSubSubscription<unknown>
-  offlineEvent: EventSubSubscription<unknown>
-  updateEvent: EventSubSubscription<unknown>
+  onlineEvent: EventSubSubscription
+  offlineEvent: EventSubSubscription
+  updateEvent: EventSubSubscription
 }
 
 @singleton()
@@ -39,10 +39,7 @@ export class EventSubService {
 
   async init(): Promise<void> {
     const { clientId, clientSecret } = this.configService.twitchTokens
-    const authProvider = new ClientCredentialsAuthProvider(
-      clientId,
-      clientSecret
-    )
+    const authProvider = new AppTokenAuthProvider(clientId, clientSecret)
 
     const apiClient = new ApiClient({ authProvider })
 
@@ -51,7 +48,8 @@ export class EventSubService {
       hostName: await NgrokHostname(this.configService),
       pathPrefix: '/twitch',
       strictHostCheck: true,
-      secret: clientSecret
+      secret: clientSecret,
+      legacySecrets: true
     })
 
     await apiClient.eventSub.deleteAllSubscriptions()
@@ -74,19 +72,16 @@ export class EventSubService {
   async subscribeEvent(channelId: string): Promise<void> {
     if (this.events.has(channelId)) return
 
-    const onlineEvent = await this.eventsub.subscribeToStreamOnlineEvents(
-      channelId,
-      (event) => this.onStreamOnline(event)
+    const onlineEvent = this.eventsub.onStreamOnline(channelId, (event) =>
+      this.onStreamOnline(event)
     )
 
-    const offlineEvent = await this.eventsub.subscribeToStreamOfflineEvents(
-      channelId,
-      (event) => this.onStreamOffline(event)
+    const offlineEvent = this.eventsub.onStreamOffline(channelId, (event) =>
+      this.onStreamOffline(event)
     )
 
-    const updateEvent = await this.eventsub.subscribeToChannelUpdateEvents(
-      channelId,
-      (event) => this.onUpdateChannel(event)
+    const updateEvent = this.eventsub.onChannelUpdate(channelId, (event) =>
+      this.onChannelUpdate(event)
     )
 
     this.events.set(channelId, { onlineEvent, offlineEvent, updateEvent })
@@ -96,14 +91,14 @@ export class EventSubService {
     const events = this.events.get(channelId)
     if (!events) return
 
-    await events.onlineEvent.stop()
-    await events.offlineEvent.stop()
-    await events.updateEvent.stop()
+    events.onlineEvent.stop()
+    events.offlineEvent.stop()
+    events.updateEvent.stop()
 
     this.events.delete(channelId)
   }
 
-  private async onUpdateChannel(
+  private async onChannelUpdate(
     event: EventSubChannelUpdateEvent
   ): Promise<void> {
     const channelInfo = await this.apiService.getChannelInfoById(

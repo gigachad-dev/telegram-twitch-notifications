@@ -16,7 +16,7 @@ export class ExpressService {
 
   async init(): Promise<void> {
     await this.eventSubService.init()
-    await this.eventSubService.middleware.apply(this.server)
+    this.eventSubService.middleware.apply(this.server)
 
     this.server.listen(
       this.configService.serverConfig.port,

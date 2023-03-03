@@ -2,11 +2,11 @@ import { AsyncAdapter } from '@stenodb/node'
 import { singleton } from 'tsyringe'
 import { Channels } from '../entities/index.js'
 import { DatabaseProvider } from './database.provider.js'
-import type { Steno } from '@stenodb/node'
+import type { AsyncProvider } from '@stenodb/node'
 
 @singleton()
 export class DatabaseChannelsService {
-  private db: Steno.NodeProvider<Channels>
+  private db: AsyncProvider<Channels>
 
   constructor(private readonly databaseProvider: DatabaseProvider) {}
 

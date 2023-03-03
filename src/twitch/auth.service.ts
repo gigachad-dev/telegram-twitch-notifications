@@ -21,16 +21,13 @@ export class AuthService {
     const { clientId, clientSecret } = this.configService.twitchTokens
     const tokens = this.authTokens()
 
-    this._authProvider = new RefreshingAuthProvider(
-      {
-        clientId,
-        clientSecret,
-        onRefresh: (token) => this.onRefreshToken(token)
-      },
-      tokens
-    )
+    this._authProvider = new RefreshingAuthProvider({
+      clientId,
+      clientSecret,
+      onRefresh: (userId, token) => this.onRefreshToken(token)
+    })
 
-    await this._authProvider.refresh()
+    await this._authProvider.addUserForToken(tokens)
   }
 
   get provider(): RefreshingAuthProvider {
