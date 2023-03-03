@@ -6,7 +6,7 @@ export class ConfigService {
   constructor(private readonly configProvider: ConfigProvider) {}
 
   get minStreamDuration(): number {
-    return 3600
+    return 600
   }
 
   get isDev(): boolean {

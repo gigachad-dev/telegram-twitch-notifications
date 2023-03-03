@@ -10,16 +10,16 @@
     "format": "prettier --write --ignore-unknown **"
   },
   "devDependencies": {
-    "@crashmax/prettier-config": "^2.2.1",
-    "@crashmax/tsconfig": "^1.0.2",
-    "@types/dedent": "^0.7.0",
-    "@types/express": "^4.17.17",
-    "@types/node": "^18.13.0",
-    "cross-env": "^7.0.3",
-    "del-cli": "^5.0.0",
-    "nodemon": "^2.0.20",
-    "ts-node": "^10.9.1",
-    "typescript": "^4.9.5"
+    "@crashmax/prettier-config": "3.1.0",
+    "@crashmax/tsconfig": "2.0.1",
+    "@types/dedent": "0.7.0",
+    "@types/express": "4.17.17",
+    "@types/node": "18.14.5",
+    "cross-env": "7.0.3",
+    "del-cli": "5.0.0",
+    "nodemon": "2.0.21",
+    "ts-node": "10.9.1",
+    "typescript": "4.9.5"
   },
   "packageManager": "pnpm@7.5.0",
   "engines": {
@@ -27,21 +27,22 @@
     "node": "^12.20.0 || ^14.13.1 || >=16.0.0"
   },
   "dependencies": {
-    "@grammyjs/menu": "^1.1.3",
-    "@stenodb/node": "^3.3.1",
-    "@twurple/api": "^5.3.4",
-    "@twurple/auth": "^5.3.4",
-    "@twurple/eventsub": "^5.3.4",
-    "@twurple/eventsub-http": "^5.3.4",
-    "class-transformer": "^0.5.1",
-    "date-fns": "^2.29.3",
-    "dedent": "^0.7.0",
-    "dotenv": "^16.0.3",
-    "envalid": "^7.3.1",
-    "express": "^4.18.2",
-    "grammy": "^1.14.1",
-    "ngrok": "^4.3.3",
-    "reflect-metadata": "^0.1.13",
-    "tsyringe": "^4.7.0"
+    "@grammyjs/menu": "1.1.3",
+    "@stenodb/node": "4.0.0",
+    "@twurple/api": "6.0.5",
+    "@twurple/auth": "6.0.5",
+    "@twurple/chat": "6.0.5",
+    "@twurple/eventsub-base": "6.0.5",
+    "@twurple/eventsub-http": "6.0.5",
+    "class-transformer": "0.5.1",
+    "date-fns": "2.29.3",
+    "dedent": "0.7.0",
+    "dotenv": "16.0.3",
+    "envalid": "7.3.1",
+    "express": "4.18.2",
+    "grammy": "1.14.1",
+    "ngrok": "4.3.3",
+    "reflect-metadata": "0.1.13",
+    "tsyringe": "4.7.0"
   }
 }

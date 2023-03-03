@@ -2,11 +2,11 @@ import { AsyncAdapter } from '@stenodb/node'
 import { singleton } from 'tsyringe'
 import { Tokens } from '../entities/tokens.js'
 import { DatabaseProvider } from './database.provider.js'
-import type { Steno } from '@stenodb/node'
+import type { AsyncProvider } from '@stenodb/node'
 
 @singleton()
 export class DatabaseTokensService {
-  private db: Steno.NodeProvider<Tokens>
+  private db: AsyncProvider<Tokens>
 
   constructor(private readonly databaseProvider: DatabaseProvider) {}
 
