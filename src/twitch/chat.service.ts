@@ -1,6 +1,7 @@
 import { ChatClient } from '@twurple/chat'
 import { singleton } from 'tsyringe'
 import { DatabaseChannelsService } from '../database/channels.service.js'
+import { DatabaseWatchersService } from '../database/watcher.service.js'
 import { TelegramCommands } from '../telegram/telegram.commands.js'
 import { AuthService } from './auth.service.js'
 import type { PrivateMessage } from '@twurple/chat'
@@ -20,7 +21,8 @@ export class ChatService {
   constructor(
     private readonly authService: AuthService,
     private readonly telegramCommands: TelegramCommands,
-    private readonly dbChannelsService: DatabaseChannelsService
+    private readonly dbChannelsService: DatabaseChannelsService,
+    private readonly dbWatchersService: DatabaseWatchersService
   ) {}
 
   async init(): Promise<void> {
@@ -52,8 +54,7 @@ export class ChatService {
   ): void {
     if (this.ignoreUsers.includes(sender)) return
 
-    const watchers = this.dbChannelsService.data!.watchers
-    for (const watcher of watchers) {
+    for (const watcher of this.dbWatchersService.data) {
       const isMatched = watcher.matches.find(
         (match) => text.toLowerCase().indexOf(match) !== -1
       )

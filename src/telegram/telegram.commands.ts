@@ -6,8 +6,9 @@ import { md } from 'telegram-escape'
 import { singleton } from 'tsyringe'
 import { ConfigService } from '../config/config.service.js'
 import { DatabaseChannelsService } from '../database/channels.service.js'
+import { DatabaseWatchersService } from '../database/watcher.service.js'
 import { Channel } from '../entities/index.js'
-import { Watcher } from '../entities/watcher.js'
+import { Watcher } from '../entities/watchers.js'
 import { ApiService } from '../twitch/api.service.js'
 import { EventSubService } from '../twitch/eventsub.service.js'
 import { TelegramMiddleware } from './telegram.middleware.js'
@@ -21,6 +22,7 @@ export class TelegramCommands {
   constructor(
     private readonly configService: ConfigService,
     private readonly dbChannelsService: DatabaseChannelsService,
+    private readonly dbWatchersService: DatabaseWatchersService,
     private readonly telegramService: TelegramService,
     private readonly telegramMiddleware: TelegramMiddleware,
     private readonly apiService: ApiService,
@@ -117,7 +119,7 @@ export class TelegramCommands {
   }
 
   async watchersList(ctx: CommandContext<Context>): Promise<void> {
-    const watchers = this.dbChannelsService.data!.watchers.find((watcher) => {
+    const watchers = this.dbWatchersService.data.find((watcher) => {
       return watcher.chatId === ctx.chat.id
     })
     if (!watchers || !watchers.matches.length) {
@@ -137,7 +139,7 @@ export class TelegramCommands {
         throw new Error('Укажите запрос на удаление из watcher.')
       }
 
-      const watcher = this.dbChannelsService.data!.watchers.find((watcher) => {
+      const watcher = this.dbWatchersService.data.find((watcher) => {
         return watcher.chatId === ctx.chat.id
       })
 
@@ -151,7 +153,8 @@ export class TelegramCommands {
       }
 
       watcher.matches.splice(index, 1)
-      await this.dbChannelsService.write()
+      await this.dbWatchersService.write()
+      throw new Error('Watcher удален.')
     } catch (err) {
       ctx.reply((err as Error).message)
     }
@@ -166,19 +169,18 @@ export class TelegramCommands {
         throw new Error('Укажите запрос на добавление в watcher.')
       }
 
-      const watcher = this.dbChannelsService.data!.watchers.find((watcher) => {
+      const watcher = this.dbWatchersService.data.find((watcher) => {
         return watcher.chatId === ctx.chat.id
       })
 
       if (watcher) {
         watcher.matches.push(input)
       } else {
-        this.dbChannelsService.data?.watchers.push(
-          new Watcher(ctx.chat.id, input)
-        )
+        this.dbWatchersService.data.push(new Watcher(ctx.chat.id, input))
       }
 
-      await this.dbChannelsService.write()
+      await this.dbWatchersService.write()
+      throw new Error('Watcher добавлен.')
     } catch (err) {
       ctx.reply((err as Error).message)
     }
