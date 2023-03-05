@@ -39,7 +39,11 @@ export class TelegramCommands {
     await this.telegramService.api.setMyCommands([
       {
         command: 'streams',
-        description: 'Получить список стримеров.'
+        description: 'Получить список стримеров в сети.'
+      },
+      {
+        command: 'channels',
+        description: 'Получить список каналов.'
       }
     ])
 
@@ -72,6 +76,8 @@ export class TelegramCommands {
 
     this.telegramService.use(this.updateStreamsMenu)
 
+    // OWNER
+
     this.telegramService.command(
       'add',
       (ctx, next) => this.telegramMiddleware.isOwner(ctx, next),
@@ -96,13 +102,46 @@ export class TelegramCommands {
       (ctx) => this.removeCommand(ctx)
     )
 
+    // FORUM
+
     this.telegramService.command(
-      ['streams', 'channels'],
+      'streams',
       (ctx, next) => this.telegramMiddleware.isForum(ctx, next),
       (ctx) => this.streamsCommand(ctx)
     )
 
+    this.telegramService.command(
+      'channels',
+      (ctx, next) => this.telegramMiddleware.isForum(ctx, next),
+      (ctx) => this.channelsCommand(ctx)
+    )
+
     await this.telegramService.initialize(this.eventSubService)
+  }
+
+  private async channelsCommand(ctx: CommandContext<Context>): Promise<void> {
+    const channels = this.dbChannelsService.data!.channels
+    if (!channels.length) {
+      await ctx.reply('Нет каналов.')
+      return
+    }
+
+    await ctx.reply(
+      dedent`
+        📄 Каналы:
+
+        ${channels
+          .map(
+            (channel) =>
+              `[${channel.displayName}](https://twitch.tv/${channel.displayName})`
+          )
+          .join('\n')}
+      `,
+      {
+        parse_mode: 'Markdown',
+        disable_web_page_preview: true
+      }
+    )
   }
 
   private async toggleWatcher(ctx: CommandContext<Context>): Promise<void> {
