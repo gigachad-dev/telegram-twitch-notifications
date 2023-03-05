@@ -27,7 +27,7 @@ export class AuthService {
       onRefresh: (userId, token) => this.onRefreshToken(token)
     })
 
-    await this._authProvider.addUserForToken(tokens)
+    await this._authProvider.addUserForToken(tokens, ['chat'])
   }
 
   get provider(): RefreshingAuthProvider {

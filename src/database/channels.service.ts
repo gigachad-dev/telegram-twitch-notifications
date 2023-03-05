@@ -1,6 +1,7 @@
 import { AsyncAdapter } from '@stenodb/node'
 import { singleton } from 'tsyringe'
 import { Channels } from '../entities/index.js'
+import { Watcher } from '../entities/watcher.js'
 import { DatabaseProvider } from './database.provider.js'
 import type { AsyncProvider } from '@stenodb/node'
 

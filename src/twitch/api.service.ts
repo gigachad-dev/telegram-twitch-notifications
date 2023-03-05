@@ -5,7 +5,7 @@ import type { HelixChannel, HelixUser } from '@twurple/api'
 
 @singleton()
 export class ApiService {
-  private apiClient: ApiClient
+  apiClient: ApiClient
 
   constructor(private readonly authService: AuthService) {}
 

@@ -5,8 +5,10 @@ import { DatabaseChannelsService } from './database/channels.service.js'
 import { DatabaseService } from './database/database.service.js'
 import { DatabaseTokensService } from './database/tokens.service.js'
 import { ExpressService } from './express/express.service.js'
+import { TelegramCommands } from './telegram/telegram.commands.js'
 import { ApiService } from './twitch/api.service.js'
 import { AuthService } from './twitch/auth.service.js'
+import { ChatService } from './twitch/chat.service.js'
 import { EventSubService } from './twitch/eventsub.service.js'
 
 @autoInjectable()
@@ -17,6 +19,7 @@ class App {
     private readonly authService: AuthService,
     private readonly apiService: ApiService,
     private readonly eventSubService: EventSubService,
+    private readonly chatService: ChatService,
     private readonly expressService: ExpressService
   ) {}
 
@@ -25,6 +28,7 @@ class App {
     await this.authService.init()
     await this.apiService.init()
     await this.eventSubService.init()
+    await this.chatService.init()
     await this.expressService.init()
 
     if (!this.configService.isDev) {

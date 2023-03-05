@@ -43,6 +43,7 @@
     "grammy": "1.14.1",
     "ngrok": "4.3.3",
     "reflect-metadata": "0.1.13",
+    "telegram-escape": "^1.1.1",
     "tsyringe": "4.7.0"
   }
 }

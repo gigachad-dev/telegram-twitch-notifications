@@ -1,5 +1,3 @@
-import { ApiClient } from '@twurple/api'
-import { AppTokenAuthProvider } from '@twurple/auth'
 import { EventSubMiddleware } from '@twurple/eventsub-http'
 import { differenceInSeconds } from 'date-fns'
 import { singleton } from 'tsyringe'
@@ -38,21 +36,16 @@ export class EventSubService {
   ) {}
 
   async init(): Promise<void> {
-    const { clientId, clientSecret } = this.configService.twitchTokens
-    const authProvider = new AppTokenAuthProvider(clientId, clientSecret)
-
-    const apiClient = new ApiClient({ authProvider })
-
     this.eventsub = new EventSubMiddleware({
-      apiClient,
+      apiClient: this.apiService.apiClient,
       hostName: await NgrokHostname(this.configService),
       pathPrefix: '/twitch',
       strictHostCheck: true,
-      secret: clientSecret,
+      secret: this.configService.twitchTokens.clientSecret,
       legacySecrets: true
     })
 
-    await apiClient.eventSub.deleteAllSubscriptions()
+    await this.apiService.apiClient.eventSub.deleteAllSubscriptions()
   }
 
   get middleware(): EventSubMiddleware {
@@ -106,7 +99,7 @@ export class EventSubService {
     )
     if (!channelInfo) return
 
-    const channelEntity = this.dbChannelsService.data!.getChannel(
+    const channelEntity = this.dbChannelsService.data!.getChannelById(
       event.broadcasterId
     )
     if (!channelEntity?.stream || channelEntity.stream.endedAt) return
@@ -121,7 +114,7 @@ export class EventSubService {
       await this.telegramService.api.editMessageCaption(
         this.getChatId(channelEntity),
         channelEntity.stream.messageId,
-        { parse_mode: 'HTML', caption: photoDescription }
+        { parse_mode: 'Markdown', caption: photoDescription }
       )
     } catch (err) {
       console.log('editMessage:', err)
@@ -149,7 +142,7 @@ export class EventSubService {
     )
     if (!channelInfo) return
 
-    const channelEntity = this.dbChannelsService.data!.getChannel(
+    const channelEntity = this.dbChannelsService.data!.getChannelById(
       channelInfo.id
     )
     if (!channelEntity) return
@@ -184,7 +177,7 @@ export class EventSubService {
       await this.telegramService.api.editMessageCaption(
         this.getChatId(channelEntity),
         channelEntity.stream!.messageId,
-        { parse_mode: 'HTML', caption: photoDescription }
+        { parse_mode: 'Markdown', caption: photoDescription }
       )
     } catch (err) {
       console.log('editMessage:', err)
@@ -213,7 +206,7 @@ export class EventSubService {
       this.getChatId(channelEntity),
       streamThumbnailUrl,
       {
-        parse_mode: 'HTML',
+        parse_mode: 'Markdown',
         caption: generateNotificationMessage({
           game: channelInfo.gameName,
           title: channelInfo.title,
@@ -239,7 +232,7 @@ export class EventSubService {
     event: EventSubStreamOfflineEvent
   ): Promise<void> {
     const channelInfo = await event.getBroadcaster()
-    const channelEntity = this.dbChannelsService.data!.getChannel(
+    const channelEntity = this.dbChannelsService.data!.getChannelById(
       channelInfo.id
     )
     if (!channelEntity?.stream || channelEntity.stream.endedAt) return
@@ -257,7 +250,7 @@ export class EventSubService {
       await this.telegramService.api.editMessageCaption(
         this.getChatId(channelEntity),
         channelEntity.stream!.messageId,
-        { parse_mode: 'HTML', caption: photoDescription }
+        { parse_mode: 'Markdown', caption: photoDescription }
       )
     } catch (err) {
       console.log('onStreamOffline:', err)

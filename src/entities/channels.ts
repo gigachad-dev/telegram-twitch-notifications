@@ -1,5 +1,6 @@
 import { Type } from 'class-transformer'
 import { Stream } from './stream.js'
+import { Watcher } from './watcher.js'
 import type { StreamSchema } from './stream.js'
 
 interface ChannelSchema {
@@ -31,11 +32,20 @@ export class Channels {
   @Type(() => Channel)
   channels: Channel[] = []
 
+  @Type(() => Watcher)
+  watchers: Watcher[] = []
+
   getChannelIds(): string[] {
     return this.channels.map((channel) => channel.channelId)
   }
 
-  getChannel(channelId: string): Channel | undefined {
+  getChannelByName(name: string): Channel | undefined {
+    return this.channels.find(
+      (channel) => channel.displayName.toLowerCase() === name.toLowerCase()
+    )
+  }
+
+  getChannelById(channelId: string): Channel | undefined {
     return this.channels.find((channel) => channel.channelId === channelId)
   }
 
