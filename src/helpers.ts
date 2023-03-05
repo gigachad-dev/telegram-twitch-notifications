@@ -1,9 +1,6 @@
 import { formatDuration, intervalToDuration } from 'date-fns'
 import dedent from 'dedent'
-
-export function escapeText(text: string): string {
-  return text.replace(/\</g, '\\<').replace(/\>/g, '\\>')
-}
+import { md } from 'telegram-escape'
 
 export function generateNotificationMessage({
   title,
@@ -19,7 +16,7 @@ export function generateNotificationMessage({
   endedAt?: Date
 }): string {
   return dedent`
-    ${createdAt ? '🔴' : '🟢'} ${title ? escapeText(title) : username}${
+    ${createdAt ? '🔴' : '🟢'} ${title ? md`${title}` : username}${
     game ? ` — ${game}` : ''
   }${
     createdAt && endedAt

@@ -35,7 +35,13 @@ export class Channels {
     return this.channels.map((channel) => channel.channelId)
   }
 
-  getChannel(channelId: string): Channel | undefined {
+  getChannelByName(name: string): Channel | undefined {
+    return this.channels.find(
+      (channel) => channel.displayName.toLowerCase() === name.toLowerCase()
+    )
+  }
+
+  getChannelById(channelId: string): Channel | undefined {
     return this.channels.find((channel) => channel.channelId === channelId)
   }
 
