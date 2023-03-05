@@ -28,3 +28,97 @@ export function generateNotificationMessage({
     https://twitch.tv/${username.toLowerCase()}
   `
 }
+
+export class RLUCache {
+  private readonly ttl: number
+  private readonly cache: Map<string, { data: string; timestamp: number }>
+
+  constructor(ttl: number) {
+    this.ttl = ttl
+    this.cache = new Map()
+  }
+
+  get(key: string): string | undefined {
+    const value = this.cache.get(key)
+
+    if (value && Date.now() - value.timestamp < this.ttl) {
+      return value.data
+    }
+
+    this.remove(key)
+
+    return undefined
+  }
+
+  set(key: string, data: string): void {
+    this.cache.set(key, { data, timestamp: Date.now() })
+  }
+
+  remove(key: string): void {
+    this.cache.delete(key)
+  }
+}
+
+export function getRandomEmoji(): string {
+  const emojis = [
+    '😄',
+    '😃',
+    '😀',
+    '😊',
+    '☺',
+    '😉',
+    '😍',
+    '😘',
+    '😚',
+    '😗',
+    '😙',
+    '😜',
+    '😝',
+    '😛',
+    '😳',
+    '😁',
+    '😔',
+    '😌',
+    '😒',
+    '😞',
+    '😣',
+    '😢',
+    '😂',
+    '😭',
+    '😪',
+    '😥',
+    '😰',
+    '😅',
+    '😓',
+    '😩',
+    '😫',
+    '😨',
+    '😱',
+    '😠',
+    '😡',
+    '😤',
+    '😖',
+    '😆',
+    '😋',
+    '😷',
+    '😎',
+    '😴',
+    '😵',
+    '😲',
+    '😟',
+    '😦',
+    '😧',
+    '😈',
+    '👿',
+    '😮',
+    '😬',
+    '😐',
+    '😕',
+    '😯',
+    '😶',
+    '😇',
+    '😏',
+    '😑'
+  ]
+  return emojis[Math.floor(Math.random() * emojis.length)]!
+}

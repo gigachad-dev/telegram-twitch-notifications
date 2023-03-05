@@ -9,6 +9,7 @@ import { DatabaseChannelsService } from '../database/channels.service.js'
 import { DatabaseWatchersService } from '../database/watcher.service.js'
 import { Channel } from '../entities/index.js'
 import { Watcher } from '../entities/watchers.js'
+import { getRandomEmoji, RLUCache } from '../helpers.js'
 import { ApiService } from '../twitch/api.service.js'
 import { EventSubService } from '../twitch/eventsub.service.js'
 import { TelegramMiddleware } from './telegram.middleware.js'
@@ -16,6 +17,7 @@ import { TelegramService } from './telegram.service.js'
 
 @singleton()
 export class TelegramCommands {
+  private readonly cache = new RLUCache(300 * 1000)
   private updateStreamsMenu: Menu<Context>
   private chatClient: ChatClient
 
@@ -44,7 +46,7 @@ export class TelegramCommands {
     this.updateStreamsMenu = new Menu('update-streams-menu').text(
       'Обновить',
       async (ctx) => {
-        const streams = await this.fetchStreams()
+        const { streams, cache } = await this.fetchStreams()
         const date = new Date().toLocaleString('ru-RU', {
           year: 'numeric',
           month: 'numeric',
@@ -56,8 +58,10 @@ export class TelegramCommands {
           hour12: false
         })
 
+        const cacheIndicator = cache ? ` (${getRandomEmoji()})` : ''
+
         await ctx.editMessageText(
-          `${streams}\n\n_Последнее обновление: ${date}_`,
+          `${streams}\n\n_Последнее обновление: ${date}_${cacheIndicator}`,
           {
             parse_mode: 'Markdown',
             disable_web_page_preview: true
@@ -278,47 +282,53 @@ export class TelegramCommands {
   }
 
   private async streamsCommand(ctx: CommandContext<Context>): Promise<void> {
-    const streams = await this.fetchStreams()
+    const { streams } = await this.fetchStreams()
 
     await ctx.reply(streams, {
       parse_mode: 'Markdown',
-      // FIXME: Bad Request: query is too old and response timeout expired or query ID is invalid
-      // reply_markup: this.updateStreamsMenu,
+      reply_markup: this.updateStreamsMenu,
       disable_web_page_preview: true,
       message_thread_id: ctx.message!.message_thread_id!
     })
   }
 
-  private async fetchStreams(): Promise<string> {
-    const users = await this.apiService.getUsersById(
+  private async fetchStreams(): Promise<{ streams: string; cache: boolean }> {
+    const cachedStreams = this.cache.get('streams')
+    if (cachedStreams) {
+      return { streams: cachedStreams, cache: true }
+    }
+
+    const usersId = await this.apiService.getUsersById(
       this.dbChannelsService.data!.getChannelIds()
     )
 
-    const streams = await Object.values(users).reduce<Promise<string[]>>(
-      async (acc, channel) => {
-        const arr = await acc
-        const streamInfo = await channel.getStream()
-        const channelLink = `[${channel.displayName}](https://twitch.tv/${channel.name})`
-        if (streamInfo) {
-          arr.unshift(
-            dedent`
+    const streams = (
+      await Object.values(usersId).reduce<Promise<string[]>>(
+        async (acc, channel) => {
+          const arr = await acc
+          const streamInfo = await channel.getStream()
+          const channelLink = `[${channel.displayName}](https://twitch.tv/${channel.name})`
+          if (streamInfo) {
+            arr.unshift(
+              dedent`
               ${channelLink} ${
-              streamInfo.type === 'live' ? `👀 ${streamInfo.viewers} ` : ''
-            }
+                streamInfo.type === 'live' ? `👀 ${streamInfo.viewers} ` : ''
+              }
               ${md`${streamInfo.title}`}${
-              streamInfo.gameName ? ` — ${streamInfo.gameName}` : ''
-            }\n
+                streamInfo.gameName ? ` — ${streamInfo.gameName}` : ''
+              }\n
             `
-          )
+            )
+            return acc
+          }
           return acc
-        }
-        arr.push(channelLink)
-        return acc
-      },
-      Promise.resolve([])
-    )
+        },
+        Promise.resolve([])
+      )
+    ).join('\n')
 
-    return streams.length ? streams.join('\n') : 'Подписки отсутствуют.'
+    this.cache.set('streams', streams)
+    return { streams, cache: false }
   }
 
   async sendMessageFromTwitch(
@@ -341,21 +351,4 @@ export class TelegramCommands {
       console.log(err)
     }
   }
-
-  // private async applyWebhook(): Promise<void> {
-  //   if (this.configService.isDev) {
-  //     await this.telegramService.api.deleteWebhook({
-  //       drop_pending_updates: true
-  //     })
-  //   } else {
-  //     await this.telegramService.api.setWebhook(
-  //       `${this.configService.serverConfig.hostname}/webhook`,
-  //       {
-  //         allowed_updates: ['message', 'callback_query'],
-  //         drop_pending_updates: true,
-  //         max_connections: 1
-  //       }
-  //     )
-  //   }
-  // }
 }
