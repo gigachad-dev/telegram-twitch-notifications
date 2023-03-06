@@ -4,9 +4,9 @@ import { singleton } from 'tsyringe'
 import { ConfigService } from '../config/config.service.js'
 import { DatabaseChannelsService } from '../database/channels.service.js'
 import { Channel } from '../entities/index.js'
-import { generateNotificationMessage } from '../helpers.js'
 import { NgrokHostname } from '../ngrok.js'
 import { TelegramService } from '../telegram/telegram.service.js'
+import { notificationMessage } from '../utils/messages.js'
 import { ApiService } from './api.service.js'
 import type { HelixChannel } from '@twurple/api'
 import type {
@@ -104,7 +104,7 @@ export class EventSubService {
     )
     if (!channelEntity?.stream || channelEntity.stream.endedAt) return
 
-    const photoDescription = generateNotificationMessage({
+    const photoDescription = notificationMessage({
       game: channelInfo.gameName,
       title: channelInfo.title,
       username: channelInfo.displayName
@@ -167,7 +167,7 @@ export class EventSubService {
     channelInfo: HelixChannel,
     channelEntity: Channel
   ): Promise<void> {
-    const photoDescription = generateNotificationMessage({
+    const photoDescription = notificationMessage({
       game: channelInfo.gameName,
       title: channelInfo.title,
       username: channelInfo.displayName
@@ -207,7 +207,7 @@ export class EventSubService {
       streamThumbnailUrl,
       {
         parse_mode: 'Markdown',
-        caption: generateNotificationMessage({
+        caption: notificationMessage({
           game: channelInfo.gameName,
           title: channelInfo.title,
           username: channelInfo.displayName
@@ -238,7 +238,7 @@ export class EventSubService {
     if (!channelEntity?.stream || channelEntity.stream.endedAt) return
 
     const endedAt = new Date()
-    const photoDescription = generateNotificationMessage({
+    const photoDescription = notificationMessage({
       game: channelEntity.stream.game,
       title: channelEntity.stream.title,
       username: channelInfo.displayName,

@@ -1,7 +1,6 @@
 import Express from 'express'
 import { singleton } from 'tsyringe'
 import { ConfigService } from '../config/config.service.js'
-import { TelegramCommands } from '../telegram/telegram.commands.js'
 import { EventSubService } from '../twitch/eventsub.service.js'
 
 @singleton()
@@ -10,8 +9,7 @@ export class ExpressService {
 
   constructor(
     private readonly configService: ConfigService,
-    private readonly eventSubService: EventSubService,
-    private readonly telegramCommands: TelegramCommands
+    private readonly eventSubService: EventSubService
   ) {}
 
   async init(): Promise<void> {
@@ -23,7 +21,6 @@ export class ExpressService {
       '0.0.0.0',
       async () => {
         await this.eventSubService.middleware.markAsReady()
-        await this.telegramCommands.init()
       }
     )
   }

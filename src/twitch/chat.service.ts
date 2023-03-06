@@ -10,7 +10,7 @@ import type { PrivateMessage } from '@twurple/chat'
 export class ChatService {
   private chatClient: ChatClient
 
-  private readonly ignoreUsers = [
+  private readonly ignoreBots = [
     'moobot',
     'twirapp',
     'nightbot',
@@ -21,12 +21,12 @@ export class ChatService {
   constructor(
     private readonly authService: AuthService,
     private readonly telegramCommands: TelegramCommands,
-    private readonly dbChannelsService: DatabaseChannelsService,
-    private readonly dbWatchersService: DatabaseWatchersService
+    private readonly channelsService: DatabaseChannelsService,
+    private readonly watchersService: DatabaseWatchersService
   ) {}
 
   async init(): Promise<void> {
-    const channels = this.dbChannelsService.data!.channels.map(
+    const channels = this.channelsService.data!.channels.map(
       (channel) => channel.displayName
     )
 
@@ -37,13 +37,13 @@ export class ChatService {
     })
 
     await this.chatClient.connect()
+    await this.telegramCommands.init(this.chatClient)
 
     this.chatClient.onAuthenticationFailure(([text, retryCount]) => {
       console.log('Auth failed', { text, retryCount })
     })
 
     this.chatClient.onMessage(this.onMessage.bind(this))
-    this.telegramCommands.applyChatClient(this.chatClient)
   }
 
   private onMessage(
@@ -52,9 +52,9 @@ export class ChatService {
     text: string,
     msg: PrivateMessage
   ): void {
-    if (this.ignoreUsers.includes(sender)) return
+    if (this.ignoreBots.includes(sender)) return
 
-    for (const watcher of this.dbWatchersService.data) {
+    for (const watcher of this.watchersService.data) {
       const isMatched = watcher.matches.find(
         (match) => text.toLowerCase().indexOf(match) !== -1
       )

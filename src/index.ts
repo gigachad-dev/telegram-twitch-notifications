@@ -28,8 +28,8 @@ class App {
     await this.authService.init()
     await this.apiService.init()
     await this.eventSubService.init()
-    await this.chatService.init()
     await this.expressService.init()
+    await this.chatService.init()
 
     if (!this.configService.isDev) {
       const { hostname, port } = this.configService.serverConfig
