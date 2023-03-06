@@ -15,7 +15,6 @@ import type {
   EventSubStreamOnlineEvent,
   EventSubSubscription
 } from '@twurple/eventsub-base'
-import type { GrammyError } from 'grammy'
 
 interface ChannelEvents {
   onlineEvent: EventSubSubscription
@@ -23,10 +22,16 @@ interface ChannelEvents {
   updateEvent: EventSubSubscription
 }
 
+interface StreamEnded {
+  endedAt: Date
+  dispose: () => void
+}
+
 @singleton()
 export class EventSubService {
   private eventsub: EventSubMiddleware
   private readonly events = new Map<string, ChannelEvents>()
+  private readonly streamsEnded = new Map<string, StreamEnded>()
 
   constructor(
     private readonly configService: ConfigService,
@@ -102,7 +107,12 @@ export class EventSubService {
     const channelEntity = this.dbChannelsService.data!.getChannelById(
       event.broadcasterId
     )
-    if (!channelEntity?.stream || channelEntity.stream.endedAt) return
+    if (
+      !channelEntity?.stream ||
+      channelEntity.stream.endedAt ||
+      this.streamsEnded.has(channelEntity.channelId)
+    )
+      return
 
     const photoDescription = notificationMessage({
       game: channelInfo.gameName,
@@ -118,10 +128,6 @@ export class EventSubService {
       )
     } catch (err) {
       console.log('editMessage:', err)
-
-      if ((err as GrammyError)?.error_code === 400) {
-        this.sendMessage(channelInfo, channelEntity)
-      }
     }
 
     channelEntity.updateStream({
@@ -147,20 +153,29 @@ export class EventSubService {
     )
     if (!channelEntity) return
 
-    if (channelEntity.stream?.endedAt) {
-      const createdAt = new Date()
-      const differenceSeconds = differenceInSeconds(
-        createdAt,
-        channelEntity.stream.endedAt
-      )
+    const isEndedStream = this.streamsEnded.get(channelEntity.channelId)
+    if (isEndedStream) isEndedStream.dispose()
 
-      if (differenceSeconds <= this.configService.minStreamDuration) {
-        this.editMessage(channelInfo, channelEntity)
-        return
-      }
+    if (channelEntity.stream?.createdAt && !channelEntity.stream?.endedAt) {
+      return
     }
 
-    this.sendMessage(channelInfo, channelEntity)
+    if (!channelEntity.stream?.endedAt) {
+      this.sendMessage(channelInfo, channelEntity)
+      return
+    }
+
+    const createdAt = new Date()
+    const differenceSeconds = differenceInSeconds(
+      createdAt,
+      channelEntity.stream.endedAt
+    )
+
+    if (differenceSeconds <= 600) {
+      this.editMessage(channelInfo, channelEntity)
+    } else {
+      this.sendMessage(channelInfo, channelEntity)
+    }
   }
 
   async editMessage(
@@ -180,11 +195,7 @@ export class EventSubService {
         { parse_mode: 'Markdown', caption: photoDescription }
       )
     } catch (err) {
-      console.log('editMessage:', err)
-
-      if ((err as GrammyError)?.error_code === 400) {
-        this.sendMessage(channelInfo, channelEntity)
-      }
+      console.log('editMessage', err)
     }
 
     channelEntity.updateStream({
@@ -246,17 +257,27 @@ export class EventSubService {
       endedAt
     })
 
-    try {
-      await this.telegramService.api.editMessageCaption(
-        this.getChatId(channelEntity),
-        channelEntity.stream!.messageId,
-        { parse_mode: 'Markdown', caption: photoDescription }
-      )
-    } catch (err) {
-      console.log('onStreamOffline:', err)
+    const editMessage = async () => {
+      try {
+        await this.telegramService.api.editMessageCaption(
+          this.getChatId(channelEntity),
+          channelEntity.stream!.messageId,
+          { parse_mode: 'Markdown', caption: photoDescription }
+        )
+      } catch (err) {
+        console.log('onStreamOffline:', err)
+      }
+
+      this.streamsEnded.delete(channelEntity.channelId)
+      channelEntity.updateStream({ endedAt })
+      await this.dbChannelsService.write()
     }
 
-    channelEntity.updateStream({ endedAt })
-    await this.dbChannelsService.write()
+    const interval = setTimeout(editMessage, 30 * 1000)
+
+    this.streamsEnded.set(channelEntity.channelId, {
+      endedAt,
+      dispose: () => clearTimeout(interval)
+    })
   }
 }

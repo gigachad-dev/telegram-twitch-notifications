@@ -4,13 +4,9 @@ interface CacheItem {
 }
 
 export class TTLCache {
-  private readonly ttl: number
-  private readonly cache: Map<string, CacheItem>
+  private readonly cache = new Map<string, CacheItem>()
 
-  constructor(ttl: number) {
-    this.ttl = ttl
-    this.cache = new Map()
-  }
+  constructor(private readonly ttl: number) {}
 
   get(key: string): string | undefined {
     const value = this.cache.get(key)
