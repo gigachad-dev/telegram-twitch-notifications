@@ -14,6 +14,7 @@ export class ChatService {
     'moobot',
     'twirapp',
     'nightbot',
+    'eventpupa',
     'streamlabs',
     'streamelements'
   ]
