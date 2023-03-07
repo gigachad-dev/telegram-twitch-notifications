@@ -20,7 +20,7 @@ export class StreamsCommmand {
     private readonly telegramMiddleware: TelegramMiddleware,
     private readonly channelsService: DatabaseChannelsService,
     private readonly apiService: ApiService
-  ) {}
+  ) { }
 
   init(): void {
     this.refreshStreamsMenu = new Menu('refresh-streams-menu').text(
@@ -41,9 +41,8 @@ export class StreamsCommmand {
         const message = dedent`
           ${streams}
 
-          _Последнее обновление: ${date}_${
-          cache ? ` (${getRandomEmoji()})` : ''
-        }
+          _Последнее обновление: ${date}_${cache ? ` (${getRandomEmoji()})` : ''
+          }
         `
 
         await ctx.editMessageText(message, {
@@ -64,6 +63,11 @@ export class StreamsCommmand {
 
   private async execute(ctx: CommandContext<Context>): Promise<void> {
     const { streams } = await this.fetchStreams()
+
+    if (!streams) {
+      await ctx.reply('Нет стримов 😢')
+      return
+    }
 
     await ctx.reply(streams, {
       parse_mode: 'Markdown',
