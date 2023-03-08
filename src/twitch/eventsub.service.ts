@@ -47,7 +47,7 @@ export class EventSubService {
       pathPrefix: '/twitch',
       strictHostCheck: true,
       secret: this.configService.twitchTokens.clientSecret,
-      legacySecrets: true
+      legacySecrets: false
     })
 
     await this.apiService.apiClient.eventSub.deleteAllSubscriptions()

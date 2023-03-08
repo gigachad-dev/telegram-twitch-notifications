@@ -14,12 +14,12 @@ export class ExpressService {
 
   async init(): Promise<void> {
     await this.eventSubService.init()
-    this.eventSubService.middleware.apply(this.server)
 
     this.server.listen(
       this.configService.serverConfig.port,
       '0.0.0.0',
       async () => {
+        this.eventSubService.middleware.apply(this.server)
         await this.eventSubService.middleware.markAsReady()
       }
     )
