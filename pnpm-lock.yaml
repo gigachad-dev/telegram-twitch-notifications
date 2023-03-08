@@ -25,7 +25,6 @@ specifiers:
   ngrok: 4.3.3
   nodemon: 2.0.21
   reflect-metadata: 0.1.13
-  telegram-escape: ^1.1.1
   ts-node: 10.9.1
   tsyringe: 4.7.0
   typescript: 4.9.5
@@ -47,7 +46,6 @@ dependencies:
   grammy: 1.14.1
   ngrok: 4.3.3
   reflect-metadata: 0.1.13
-  telegram-escape: 1.1.1
   tsyringe: 4.7.0
 
 devDependencies:
@@ -2725,11 +2723,6 @@ packages:
     dependencies:
       has-flag: 3.0.0
     dev: true
-
-  /telegram-escape/1.1.1:
-    resolution: {integrity: sha512-FyQ2Czz5H2sq0alNSeXUJ9+oBfT62PxTaQx7Wx0eqieh//6cp6w9DnAlbmUtoHrAjnGId0K2xmHjbzmyi8SUVw==}
-    engines: {node: '>=14'}
-    dev: false
 
   /to-fast-properties/2.0.0:
     resolution: {integrity: sha512-/OaKK0xYrs3DmxRYqL/yDc+FxFUVYhDlXMhRmv3z915w2HF1tnN1omB354j8VUGO/hbRzyD6Y3sA7v7GS/ceog==}

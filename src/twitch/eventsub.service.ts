@@ -124,7 +124,7 @@ export class EventSubService {
       await this.telegramService.api.editMessageCaption(
         this.getChatId(channelEntity),
         channelEntity.stream.messageId,
-        { parse_mode: 'Markdown', caption: photoDescription }
+        { caption: photoDescription }
       )
     } catch (err) {
       console.log('editMessage:', err)
@@ -192,7 +192,7 @@ export class EventSubService {
       await this.telegramService.api.editMessageCaption(
         this.getChatId(channelEntity),
         channelEntity.stream!.messageId,
-        { parse_mode: 'Markdown', caption: photoDescription }
+        { caption: photoDescription }
       )
     } catch (err) {
       console.log('editMessage', err)
@@ -217,7 +217,6 @@ export class EventSubService {
       this.getChatId(channelEntity),
       streamThumbnailUrl,
       {
-        parse_mode: 'Markdown',
         caption: notificationMessage({
           game: channelInfo.gameName,
           title: channelInfo.title,
@@ -262,7 +261,7 @@ export class EventSubService {
         await this.telegramService.api.editMessageCaption(
           this.getChatId(channelEntity),
           channelEntity.stream!.messageId,
-          { parse_mode: 'Markdown', caption: photoDescription }
+          { caption: photoDescription }
         )
       } catch (err) {
         console.log('onStreamOffline:', err)
