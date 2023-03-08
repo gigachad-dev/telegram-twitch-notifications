@@ -54,18 +54,24 @@ export class ChannelsCommand {
       case 'remove': // chaennels remove
         return this.removeChannel(ctx, matches)
       default:
-        ctx.reply('Неизвестная команда.')
+        ctx.reply('Неизвестная команда.', {
+          reply_to_message_id: ctx.message?.message_id,
+          message_thread_id: ctx.message?.message_thread_id
+        })
     }
   }
 
   private async getChannels(ctx: CommandContext<Context>): Promise<void> {
     const channels = this.channelsService.data!.channels
     if (!channels.length) {
-      await ctx.reply('Нет каналов.')
+      ctx.reply('Нет каналов.', {
+        reply_to_message_id: ctx.message?.message_id,
+        message_thread_id: ctx.message?.message_thread_id
+      })
       return
     }
 
-    await ctx.reply(channelsMessage(channels), {
+    ctx.reply(channelsMessage(channels), {
       parse_mode: 'Markdown',
       disable_web_page_preview: true,
       reply_to_message_id: ctx.message?.message_id,

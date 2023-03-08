@@ -40,7 +40,10 @@ export class WatchersCommand {
       case 'remove': // watchers remove
         return this.removeWatcher(ctx, input)
       default:
-        ctx.reply('Неизвестная команда.')
+        ctx.reply('Неизвестная команда.', {
+          reply_to_message_id: ctx.message?.message_id,
+          message_thread_id: ctx.message?.message_thread_id
+        })
     }
   }
 
@@ -50,11 +53,17 @@ export class WatchersCommand {
     })
 
     if (!watchers || !watchers.matches.length) {
-      await ctx.reply('Нет watcher-ов.')
+      ctx.reply('Нет watcher-ов.', {
+        reply_to_message_id: ctx.message?.message_id,
+        message_thread_id: ctx.message?.message_thread_id
+      })
       return
     }
 
-    await ctx.reply(`Matches: ${watchers.matches.join(', ')}`)
+    ctx.reply(`Matches: ${watchers.matches.join(', ')}`, {
+      reply_to_message_id: ctx.message?.message_id,
+      message_thread_id: ctx.message?.message_thread_id
+    })
   }
 
   private async addWatcher(
@@ -79,7 +88,10 @@ export class WatchersCommand {
       await this.watchersService.write()
       throw new Error('Watcher добавлен.')
     } catch (err) {
-      ctx.reply((err as Error).message)
+      ctx.reply((err as Error).message, {
+        reply_to_message_id: ctx.message?.message_id,
+        message_thread_id: ctx.message?.message_thread_id
+      })
     }
   }
 
@@ -109,7 +121,10 @@ export class WatchersCommand {
       await this.watchersService.write()
       throw new Error('Watcher удален.')
     } catch (err) {
-      ctx.reply((err as Error).message)
+      ctx.reply((err as Error).message, {
+        reply_to_message_id: ctx.message?.message_id,
+        message_thread_id: ctx.message?.message_thread_id
+      })
     }
   }
 }

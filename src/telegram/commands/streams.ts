@@ -66,11 +66,14 @@ export class StreamsCommmand {
     const { streams } = await this.fetchStreams()
 
     if (!streams) {
-      await ctx.reply('Нет стримов 😢')
+      ctx.reply('Нет стримов 😢', {
+        reply_to_message_id: ctx.message?.message_id,
+        message_thread_id: ctx.message?.message_thread_id
+      })
       return
     }
 
-    await ctx.reply(streams, {
+    ctx.reply(streams, {
       parse_mode: 'Markdown',
       reply_markup: this.refreshStreamsMenu,
       disable_web_page_preview: true,
