@@ -74,7 +74,8 @@ export class StreamsCommmand {
       parse_mode: 'Markdown',
       reply_markup: this.refreshStreamsMenu,
       disable_web_page_preview: true,
-      message_thread_id: ctx.message!.message_thread_id!
+      reply_to_message_id: ctx.message?.message_id,
+      message_thread_id: ctx.message?.message_thread_id
     })
   }
 
