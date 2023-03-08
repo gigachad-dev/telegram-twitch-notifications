@@ -83,13 +83,19 @@ export class StreamsCommmand {
     const cachedStreams = this.cache.get('streams')
     if (cachedStreams) return { streams: cachedStreams, cache: true }
 
-    const channels = await this.apiService.getUsersById(
-      this.channelsService.data!.getChannelIds()
-    )
+    const channelsIds = this.channelsService
+      .data!.channels.filter(
+        (channel) => channel.stream && channel.stream.endedAt === null
+      )
+      .map((channel) => channel.channelId)
 
-    const streams = await channelsOnlineMessage(channels)
-    this.cache.set('streams', streams)
+    const streams = channelsIds.length
+      ? await this.apiService.getStreamsByIds(channelsIds)
+      : []
 
-    return { streams, cache: false }
+    const msg = channelsOnlineMessage(streams)
+    this.cache.set('streams', msg)
+
+    return { streams: msg, cache: false }
   }
 }

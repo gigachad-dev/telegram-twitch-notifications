@@ -1,7 +1,7 @@
 import { formatDuration, intervalToDuration } from 'date-fns'
 import dedent from 'dedent'
 import type { Channel } from '../entities/channels.js'
-import type { HelixUser } from '@twurple/api'
+import type { HelixStream, HelixUser } from '@twurple/api'
 
 interface NotificationMessageArgs {
   title: string | null
@@ -64,23 +64,18 @@ export function streamsMessage({
   `
 }
 
-export async function channelsOnlineMessage(
-  channels: HelixUser[]
-): Promise<string> {
-  const streams: string[] = []
+export function channelsOnlineMessage(streams: HelixStream[]): string {
+  const msg: string[] = []
 
-  for (const channel of channels) {
-    const streamInfo = await channel.getStream()
-    if (!streamInfo) continue
-
-    streams.push(
+  for (const stream of streams) {
+    msg.push(
       // prettier-ignore
       dedent`
-        [${channel.displayName}](https://twitch.tv/${channel.name}) 👀 ${streamInfo.viewers}
-        ${decodeURI(streamInfo.title)}${streamInfo.gameName ? ` — ${streamInfo.gameName}` : ''}\n
+        [${stream.userDisplayName}](https://twitch.tv/${stream.userName}) 👀 ${stream.viewers}
+        ${decodeURI(stream.title)}${stream.gameName ? ` — ${stream.gameName}` : ''}\n
       `
     )
   }
 
-  return streams.join('\n')
+  return msg.join('\n')
 }

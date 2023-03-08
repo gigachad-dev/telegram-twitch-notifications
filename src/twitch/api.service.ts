@@ -1,7 +1,7 @@
 import { ApiClient } from '@twurple/api'
 import { singleton } from 'tsyringe'
 import { AuthService } from './auth.service.js'
-import type { HelixChannel, HelixUser } from '@twurple/api'
+import type { HelixChannel, HelixStream, HelixUser } from '@twurple/api'
 
 @singleton()
 export class ApiService {
@@ -31,6 +31,10 @@ export class ApiService {
 
   async getUsersById(userIds: string[]): Promise<HelixUser[]> {
     return await this.apiClient.users.getUsersByIds(userIds)
+  }
+
+  async getStreamsByIds(userIds: string[]): Promise<HelixStream[]> {
+    return await this.apiClient.streams.getStreamsByUserIds(userIds)
   }
 
   getThumbnailUrl(userName: string): string {
