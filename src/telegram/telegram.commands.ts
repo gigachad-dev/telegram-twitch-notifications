@@ -30,10 +30,6 @@ export class TelegramCommands {
       {
         command: 'channels',
         description: 'Получить список каналов.'
-      },
-      {
-        command: 'watchers',
-        description: 'Получить список наблюдателей.'
       }
     ])
 
