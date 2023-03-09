@@ -1,7 +1,8 @@
 import { formatDuration, intervalToDuration } from 'date-fns'
 import dedent from 'dedent'
+import { escapeMarkdown } from './escapeMarkdown.js'
 import type { Channel } from '../entities/channels.js'
-import type { HelixStream, HelixUser } from '@twurple/api'
+import type { HelixStream } from '@twurple/api'
 
 interface NotificationMessageArgs {
   title: string | null
@@ -19,7 +20,7 @@ export function notificationMessage({
   endedAt
 }: NotificationMessageArgs): string {
   return dedent`
-    ${createdAt ? '🔴' : '🟢'} ${title ? decodeURI(title) : username}${
+    ${createdAt ? '🔴' : '🟢'} ${title ? title : username}${
     game ? ` — ${game}` : ''
   }${
     createdAt && endedAt
@@ -60,7 +61,7 @@ export function streamsMessage({
 }: StreamMessageArgs): string {
   return dedent`
     [${channel}](https://twitch.tv/${channel}) ⤵️
-    [${sender}](https://twitch.tv/${sender}): ${decodeURI(message)}
+    [${sender}](https://twitch.tv/${sender}): ${escapeMarkdown(message)}
   `
 }
 
@@ -72,7 +73,7 @@ export function channelsOnlineMessage(streams: HelixStream[]): string {
       // prettier-ignore
       dedent`
         [${stream.userDisplayName}](https://twitch.tv/${stream.userName}) 👀 ${stream.viewers}
-        ${decodeURI(stream.title)}${stream.gameName ? ` — ${stream.gameName}` : ''}\n
+        ${escapeMarkdown(stream.title)}${stream.gameName ? ` — ${stream.gameName}` : ''}\n
       `
     )
   }
