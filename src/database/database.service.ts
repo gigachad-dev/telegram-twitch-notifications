@@ -1,7 +1,7 @@
 import { singleton } from 'tsyringe'
 import { DatabaseChannelsService } from './channels.service.js'
 import { DatabaseTokensService } from './tokens.service.js'
-import { DatabaseWatchersService } from './watcher.service.js'
+import { DatabaseWatchersService } from './watchers.service.js'
 
 @singleton()
 export class DatabaseService {

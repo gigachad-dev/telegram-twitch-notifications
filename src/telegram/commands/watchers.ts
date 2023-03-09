@@ -1,14 +1,19 @@
+import dedent from 'dedent'
 import { singleton } from 'tsyringe'
-import { DatabaseWatchersService } from '../../database/watcher.service.js'
+import { DatabaseWatchersService } from '../../database/watchers.service.js'
 import { Watcher } from '../../entities/watchers.js'
+import { ApiService } from '../../twitch/api.service.js'
 import { parseMatch } from '../../utils/parse-match.js'
 import { TelegramMiddleware } from '../telegram.middleware.js'
 import { TelegramService } from '../telegram.service.js'
 import type { CommandContext, Context } from 'grammy'
 
+type WatchersType = 'allowed_words' | 'ignored_users'
+
 @singleton()
 export class WatchersCommand {
   constructor(
+    private readonly apiService: ApiService,
     private readonly telegramService: TelegramService,
     private readonly telegramMiddleware: TelegramMiddleware,
     private readonly watchersService: DatabaseWatchersService
@@ -16,115 +21,75 @@ export class WatchersCommand {
 
   init(): void {
     this.telegramService.command(
-      'watcher',
-      (ctx, next) => this.telegramMiddleware.isOwner(ctx, next),
-      (ctx) => this.execute(ctx)
-    )
-
-    this.telegramService.command(
       'watchers',
       (ctx, next) => this.telegramMiddleware.isOwner(ctx, next),
-      (ctx) => this.getWatchers(ctx)
+      (ctx) => this.execute(ctx)
     )
   }
 
   private async execute(ctx: CommandContext<Context>): Promise<void> {
     const { command, matches } = parseMatch(ctx.match)
-    const input = matches.join(' ')
+    const input = matches.join(' ').toLowerCase()
 
-    switch (command) {
-      case undefined: // watcher/watchers
-        return this.getWatchers(ctx)
-      case 'add': // watchers add
-        return this.addWatcher(ctx, input)
-      case 'remove': // watchers remove
-        return this.removeWatcher(ctx, input)
-      default:
-        ctx.reply('Неизвестная команда.', {
-          reply_to_message_id: ctx.message?.message_id,
-          message_thread_id: ctx.message?.message_thread_id
-        })
-    }
-  }
-
-  private async getWatchers(ctx: CommandContext<Context>): Promise<void> {
-    const watchers = this.watchersService.data.find((watcher) => {
-      return watcher.chatId === ctx.chat.id
-    })
-
-    if (!watchers || !watchers.matches.length) {
-      ctx.reply('Нет watcher-ов.', {
+    try {
+      switch (command) {
+        case undefined:
+          throw this.getWatchers(ctx)
+        case 'allowed_words':
+          throw await this.toggleWatcherOptions(ctx, 'allowed_words', input)
+        case 'ignored_users':
+          throw await this.toggleWatcherOptions(ctx, 'ignored_users', input)
+        default:
+          throw 'Неизвестная команда.'
+      }
+    } catch (err) {
+      ctx.reply(err as string, {
         reply_to_message_id: ctx.message?.message_id,
         message_thread_id: ctx.message?.message_thread_id
       })
-      return
     }
-
-    ctx.reply(`Matches: ${watchers.matches.join(', ')}`, {
-      reply_to_message_id: ctx.message?.message_id,
-      message_thread_id: ctx.message?.message_thread_id
-    })
   }
 
-  private async addWatcher(
+  private getWatchers(ctx: CommandContext<Context>): string {
+    const watchers = this.watchersService.findWatchers(ctx.chat.id)
+    if (!watchers) return 'У вас отсутствуют подписки.'
+
+    return dedent`
+      allowed_words: ${watchers.allowed_words.join(', ')}
+      ignored_users: ${watchers.ignored_users.join(', ')}
+    `
+  }
+
+  private async toggleWatcherOptions(
     ctx: CommandContext<Context>,
+    type: WatchersType,
     input: string
-  ): Promise<void> {
-    try {
-      if (!input) {
-        throw new Error('Укажите запрос на добавление в watcher.')
+  ): Promise<string> {
+    if (!input) return 'Укажите запрос на добавление/удаление.'
+
+    const watchers = this.watchersService.findWatchers(ctx.chat.id)
+    if (watchers) {
+      if (type === 'ignored_users') {
+        const channelInfo = await this.apiService.getChannelByName(input)
+        if (!channelInfo) return 'Такого пользователя не существует.'
       }
 
-      const watcher = this.watchersService.data.find((watcher) => {
-        return watcher.chatId === ctx.chat.id
-      })
-
-      if (watcher) {
-        watcher.matches.push(input)
+      const index = watchers[type].indexOf(input)
+      if (index !== -1) {
+        watchers[type].splice(index, 1)
       } else {
-        this.watchersService.data.push(new Watcher(ctx.chat.id, input))
+        watchers[type].push(input)
       }
+    } else {
+      const newWatchersOptions =
+        type === 'allowed_words'
+          ? new Watcher(ctx.chat.id, [input])
+          : new Watcher(ctx.chat.id, [], [input])
 
-      await this.watchersService.write()
-      throw new Error('Watcher добавлен.')
-    } catch (err) {
-      ctx.reply((err as Error).message, {
-        reply_to_message_id: ctx.message?.message_id,
-        message_thread_id: ctx.message?.message_thread_id
-      })
+      this.watchersService.data.push(newWatchersOptions)
     }
-  }
 
-  private async removeWatcher(
-    ctx: CommandContext<Context>,
-    input: string
-  ): Promise<void> {
-    try {
-      if (!input) {
-        throw new Error('Укажите запрос на удаление из watcher.')
-      }
-
-      const watcher = this.watchersService.data.find((watcher) => {
-        return watcher.chatId === ctx.chat.id
-      })
-
-      if (!watcher) {
-        throw new Error('Watcher не найден.')
-      }
-
-      const index = watcher.matches.indexOf(input)
-      if (index === -1) {
-        throw new Error('Watcher не найден.')
-      }
-
-      watcher.matches.splice(index, 1)
-      await this.watchersService.write()
-      throw new Error('Watcher удален.')
-    } catch (err) {
-      ctx.reply((err as Error).message, {
-        reply_to_message_id: ctx.message?.message_id,
-        message_thread_id: ctx.message?.message_thread_id
-      })
-    }
+    await this.watchersService.write()
+    return 'Сохранено!'
   }
 }

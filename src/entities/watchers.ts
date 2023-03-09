@@ -5,12 +5,27 @@ export class Watchers {
   watchers: Watcher[] = []
 }
 
+const bots = [
+  'moobot',
+  'twirapp',
+  'nightbot',
+  'eventpupa',
+  'streamlabs',
+  'streamelements'
+]
+
 export class Watcher {
   chatId: number
-  matches: string[]
+  allowed_words: string[]
+  ignored_users: string[]
 
-  constructor(chatId: number, ...matches: string[]) {
+  constructor(
+    chatId: number,
+    allow_words: string[] = [],
+    ignore_users: string[] = []
+  ) {
     this.chatId = chatId
-    this.matches = matches
+    this.allowed_words = allow_words
+    this.ignored_users = [...bots, ...ignore_users]
   }
 }
