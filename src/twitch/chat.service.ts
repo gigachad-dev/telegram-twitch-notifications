@@ -1,7 +1,7 @@
 import { ChatClient } from '@twurple/chat'
 import { singleton } from 'tsyringe'
 import { DatabaseChannelsService } from '../database/channels.service.js'
-import { DatabaseWatchersService } from '../database/watcher.service.js'
+import { DatabaseWatchersService } from '../database/watchers.service.js'
 import { TelegramCommands } from '../telegram/telegram.commands.js'
 import { AuthService } from './auth.service.js'
 import type { PrivateMessage } from '@twurple/chat'
@@ -9,15 +9,6 @@ import type { PrivateMessage } from '@twurple/chat'
 @singleton()
 export class ChatService {
   private chatClient: ChatClient
-
-  private readonly ignoreBots = [
-    'moobot',
-    'twirapp',
-    'nightbot',
-    'eventpupa',
-    'streamlabs',
-    'streamelements'
-  ]
 
   constructor(
     private readonly authService: AuthService,
@@ -53,14 +44,16 @@ export class ChatService {
     text: string,
     msg: PrivateMessage
   ): void {
-    if (this.ignoreBots.includes(sender)) return
-
     for (const watcher of this.watchersService.data) {
-      const isMatched = watcher.matches.find(
+      const isIgnoredUser = watcher.ignored_users.find((match) =>
+        match.includes(sender)
+      )
+      if (isIgnoredUser) continue
+
+      const isAllowedWord = watcher.allowed_words.find(
         (match) => text.toLowerCase().indexOf(match) !== -1
       )
-
-      if (isMatched) {
+      if (isAllowedWord) {
         this.telegramCommands.sendMessageFromTwitch(
           channel.slice(1),
           sender,

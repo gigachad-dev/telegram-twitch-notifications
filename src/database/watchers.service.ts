@@ -20,6 +20,10 @@ export class DatabaseWatchersService {
     return this.db.data!.watchers
   }
 
+  findWatchers(chatId: number) {
+    return this.data.find((watcher) => watcher.chatId === chatId)
+  }
+
   async write() {
     await this.db.write()
   }
