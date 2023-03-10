@@ -127,7 +127,7 @@ export class EventSubService {
         { caption: photoDescription }
       )
     } catch (err) {
-      console.log('editMessage:', err)
+      // console.log('editMessage:', err)
     }
 
     channelEntity.updateStream({
@@ -264,7 +264,7 @@ export class EventSubService {
           { caption: photoDescription }
         )
       } catch (err) {
-        console.log('onStreamOffline:', err)
+        // console.log('onStreamOffline:', err)
       }
 
       this.streamsEnded.delete(channelEntity.channelId)
