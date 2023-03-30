@@ -52,7 +52,7 @@ export class ChannelsCommand {
       case 'add': // channels add
         return this.addChannel(ctx, matches)
       case 'remove': // chaennels remove
-        return this.removeChannel(ctx, matches)
+        return this.removeChannel(ctx, matches.at(0) ?? '')
       default:
         ctx.reply('Неизвестная команда.', {
           reply_to_message_id: ctx.message?.message_id,
@@ -138,33 +138,22 @@ export class ChannelsCommand {
 
   private async removeChannel(
     ctx: CommandContext<Context>,
-    matches: string[]
+    matches: string
   ): Promise<void> {
     try {
       if (!matches.length) {
         throw new Error('Укажите никнейм канала.')
       }
 
-      const channelInfo = await this.apiService.getChannelsByNames(matches)
-      if (!channelInfo.length) {
+      const channel = this.channelsService.data?.getChannelByName(matches)
+      if (!channel) {
         throw new Error('Канал не найден.')
       }
 
-      for (const channel of channelInfo) {
-        const channelEntity = this.channelsService.data!.getChannelById(
-          channel.id
-        )
-        if (!channelEntity) {
-          throw new Error(
-            `Канал "${channel.displayName}" не имеет подписки на уведомления.`
-          )
-        }
-
-        this.channelsService.data!.deleteChannel(channelEntity.channelId)
-        await this.channelsService.write()
-        await this.eventSubService.unsubscribeEvent(channel.id)
-        this.chatClient.part(channel.displayName)
-      }
+      this.channelsService.data!.deleteChannel(channel.channelId)
+      await this.channelsService.write()
+      await this.eventSubService.unsubscribeEvent(channel.channelId)
+      this.chatClient.part(channel.displayName)
 
       throw new Error(`Канал отписан от уведомлений.`)
     } catch (err) {
