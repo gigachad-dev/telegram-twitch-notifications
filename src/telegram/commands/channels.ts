@@ -145,7 +145,7 @@ export class ChannelsCommand {
         throw new Error('Укажите никнейм канала.')
       }
 
-      const channel = this.channelsService.data?.getChannelByName(matches)
+      const channel = this.channelsService.data!.getChannelByName(matches)
       if (!channel) {
         throw new Error('Канал не найден.')
       }
