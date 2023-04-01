@@ -2,6 +2,7 @@ import { singleton } from 'tsyringe'
 import { EventSubService } from '../twitch/eventsub.service.js'
 import { streamsMessage } from '../utils/messages.js'
 import { ChannelsCommand } from './commands/channels.js'
+import { DeleteMessageCommand } from './commands/delete-message.js'
 import { StreamsCommmand } from './commands/streams.js'
 import { WatchersCommand } from './commands/watchers.js'
 import { TelegramService } from './telegram.service.js'
@@ -12,20 +13,26 @@ export class TelegramCommands {
   constructor(
     private readonly telegramService: TelegramService,
     private readonly eventSubService: EventSubService,
+    private readonly deleteMessageCommand: DeleteMessageCommand,
     private readonly channelsCommand: ChannelsCommand,
     private readonly streamsCommand: StreamsCommmand,
     private readonly watchersCommand: WatchersCommand
   ) {}
 
   async init(chatClient: ChatClient): Promise<void> {
+    this.deleteMessageCommand.init()
     this.channelsCommand.init(chatClient)
     this.streamsCommand.init()
     this.watchersCommand.init()
 
     await this.telegramService.api.setMyCommands([
       {
+        command: 'delete',
+        description: 'Ответьте на сообщение, чтобы удалить его.'
+      },
+      {
         command: 'streams',
-        description: 'Получить список стримеров в сети.'
+        description: 'Получить список каналов в сети.'
       },
       {
         command: 'channels',
