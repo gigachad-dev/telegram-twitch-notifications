@@ -14,8 +14,24 @@ export class TelegramService extends Bot {
   }
 
   async initialize(eventsub: EventSubService): Promise<void> {
+    this.on('chat_member', async (ctx) => {
+      if (ctx.chatMember.new_chat_member.status === 'left') {
+        await this.api.banChatMember(
+          ctx.chat.id,
+          ctx.chatMember.new_chat_member.user.id,
+          {
+            revoke_messages: false
+          }
+        )
+      }
+    })
+
     this.start({
-      allowed_updates: ['message', 'callback_query'],
+      allowed_updates: [
+        'message',
+        'callback_query',
+        'chat_member'
+      ],
       onStart: async () => {
         for (const channel of this.dbChannelService.data!.channels) {
           await eventsub.subscribeEvent(channel.channelId)
