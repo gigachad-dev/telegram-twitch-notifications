@@ -1,4 +1,5 @@
 import { ApiClient } from '@twurple/api'
+import { wait } from '@zero-dependency/utils'
 import { singleton } from 'tsyringe'
 import { AuthService } from './auth.service.js'
 import type { HelixChannel, HelixStream, HelixUser } from '@twurple/api'
@@ -37,7 +38,15 @@ export class ApiService {
     return await this.apiClient.streams.getStreamsByUserIds(userIds)
   }
 
-  getThumbnailUrl(userName: string): string {
-    return `https://static-cdn.jtvnw.net/previews-ttv/live_user_${userName}-1920x1080.jpg?timestamp=${Date.now()}`
+  async getThumbnail(userName: string): Promise<string> {
+    const url = `https://static-cdn.jtvnw.net/previews-ttv/live_user_${userName}-1920x1080.jpg`
+
+    for (let i = 0; i < 5; i++) {
+      const response = await fetch(url + `?timestamp=${Date.now()}`)
+      if (!response.redirected) return url
+      await wait(60 * 1000)
+    }
+
+    return url
   }
 }

@@ -211,7 +211,9 @@ export class EventSubService {
     channelInfo: HelixChannel,
     channelEntity: Channel
   ): Promise<void> {
-    const streamThumbnailUrl = this.apiService.getThumbnailUrl(channelInfo.name)
+    const streamThumbnailUrl = await this.apiService.getThumbnail(
+      channelInfo.name
+    )
 
     const sendedMessage = await this.telegramService.api.sendPhoto(
       this.getChatId(channelEntity),
