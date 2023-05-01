@@ -41,7 +41,7 @@ export class ApiService {
   async getThumbnail(userName: string): Promise<string> {
     const url = `https://static-cdn.jtvnw.net/previews-ttv/live_user_${userName}-1920x1080.jpg`
 
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < 10; i++) {
       const response = await fetch(url + `?timestamp=${Date.now()}`)
       if (!response.redirected) return url
       await wait(60 * 1000)
