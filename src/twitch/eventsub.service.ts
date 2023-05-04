@@ -213,7 +213,7 @@ export class EventSubService {
     channelEntity: Channel
   ): Promise<void> {
     const thumbnailUrl = await fetchThumbnailUrl(
-      this.configService.serverConfig.public,
+      this.configService.serverConfig.hostname,
       channelInfo.name
     )
 

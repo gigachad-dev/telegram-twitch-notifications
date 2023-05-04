@@ -5,7 +5,7 @@ import { thumbnailsPath } from '../config/config.service.js'
 const timestamp = () => `?timestamp=${Date.now()}`
 
 export async function fetchThumbnailUrl(
-  host: string,
+  hostname: string,
   username: string
 ): Promise<string> {
   const baseUrl = `https://static-cdn.jtvnw.net/previews-ttv/live_user_${username}`
@@ -28,15 +28,17 @@ export async function fetchThumbnailUrl(
         continue
       }
 
-      if (!host) {
+      if (hostname === 'localhost') {
         return thumbnailsUrl
       }
 
       const buffer = await response.arrayBuffer()
       await writeFile(`${thumbnailsPath}/${username}.jpg`, Buffer.from(buffer))
-      return `${host}/thumbnails/${username}.jpg${timestamp()}`
+      return `${hostname}/thumbnails/${username}.jpg${timestamp()}`
     }
   }
 
-  return host ? `${host}/thumbnails/fallback.png` : urls[0] + timestamp()
+  return hostname !== 'localhost'
+    ? `${hostname}/thumbnails/fallback.png`
+    : urls[0] + timestamp()
 }

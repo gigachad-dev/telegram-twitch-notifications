@@ -44,7 +44,6 @@ export class ConfigService {
 
   get serverConfig() {
     return {
-      public: this.configProvider.config.EXPRESS_PUBLIC,
       hostname: this.configProvider.config.EXPRESS_HOSTNAME,
       port: this.configProvider.config.EXPRESS_PORT
     }

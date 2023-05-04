@@ -11,7 +11,6 @@ interface Environments {
   CLIENT_SECRET: string
   ACCESS_TOKEN: string
   REFRESH_TOKEN: string
-  EXPRESS_PUBLIC: string
   EXPRESS_HOSTNAME: string
   EXPRESS_PORT: number
 }
@@ -31,7 +30,6 @@ export class ConfigProvider {
       CLIENT_SECRET: str(),
       ACCESS_TOKEN: str(),
       REFRESH_TOKEN: str(),
-      EXPRESS_PUBLIC: str(),
       EXPRESS_HOSTNAME: str({ default: 'localhost' }),
       EXPRESS_PORT: num({ default: 3003 })
     })
