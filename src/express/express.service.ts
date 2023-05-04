@@ -1,6 +1,6 @@
 import Express from 'express'
 import { singleton } from 'tsyringe'
-import { ConfigService } from '../config/config.service.js'
+import { ConfigService, thumbnailsPath } from '../config/config.service.js'
 import { EventSubService } from '../twitch/eventsub.service.js'
 
 @singleton()
@@ -13,6 +13,7 @@ export class ExpressService {
   ) {}
 
   async init(): Promise<void> {
+    this.server.use('/thumbnails', Express.static(thumbnailsPath))
     await this.eventSubService.init()
     this.eventSubService.middleware.apply(this.server)
 
