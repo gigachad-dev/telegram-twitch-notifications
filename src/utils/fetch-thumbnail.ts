@@ -9,8 +9,8 @@ export async function fetchThumbnailUrl(
   username: string
 ): Promise<string> {
   const baseUrl = `https://static-cdn.jtvnw.net/previews-ttv/live_user_${username}`
-  const attempts = 10 // (10 attempts * (15 seconds * 4 urls)) = 10 minutes
-  const timeout = 20 * 1000 // 20 seconds
+  const attempts = 10 // (10 attempts * (30 seconds * 4 urls)) = 20 minutes
+  const timeout = 30 * 1000 // 30 seconds
   const urls = [
     `${baseUrl}-1920x1079.jpg`, // hack
     `${baseUrl}-1920x1080.jpg`, // full hd
@@ -23,7 +23,7 @@ export async function fetchThumbnailUrl(
     for (const url of urls) {
       const thumbnailsUrl = url + timestamp()
       const response = await fetch(thumbnailsUrl)
-      if (response.redirected) {
+      if (response.status !== 200) {
         await wait(timeout)
         continue
       }
