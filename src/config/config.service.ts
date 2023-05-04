@@ -1,5 +1,21 @@
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { injectable } from 'tsyringe'
 import { ConfigProvider } from './config.provider.js'
+
+export const envPath = resolve(
+  dirname(fileURLToPath(import.meta.url)),
+  '..',
+  '..',
+  '.env'
+)
+
+export const thumbnailsPath = resolve(
+  dirname(fileURLToPath(import.meta.url)),
+  '..',
+  '..',
+  'thumbnails'
+)
 
 @injectable()
 export class ConfigService {
@@ -28,6 +44,7 @@ export class ConfigService {
 
   get serverConfig() {
     return {
+      public: this.configProvider.config.EXPRESS_PUBLIC,
       hostname: this.configProvider.config.EXPRESS_HOSTNAME,
       port: this.configProvider.config.EXPRESS_PORT
     }

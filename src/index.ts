@@ -1,11 +1,8 @@
 import 'reflect-metadata'
 import { autoInjectable, container } from 'tsyringe'
 import { ConfigService } from './config/config.service.js'
-import { DatabaseChannelsService } from './database/channels.service.js'
 import { DatabaseService } from './database/database.service.js'
-import { DatabaseTokensService } from './database/tokens.service.js'
 import { ExpressService } from './express/express.service.js'
-import { TelegramCommands } from './telegram/telegram.commands.js'
 import { ApiService } from './twitch/api.service.js'
 import { AuthService } from './twitch/auth.service.js'
 import { ChatService } from './twitch/chat.service.js'
@@ -27,9 +24,8 @@ class App {
     await this.databaseService.init()
     await this.authService.init()
     await this.apiService.init()
-    await this.eventSubService.init()
-    await this.chatService.init()
     await this.expressService.init()
+    await this.chatService.init()
 
     if (!this.configService.isDev) {
       const { hostname, port } = this.configService.serverConfig

@@ -6,6 +6,7 @@ import { DatabaseChannelsService } from '../database/channels.service.js'
 import { Channel } from '../entities/index.js'
 import { NgrokHostname } from '../ngrok.js'
 import { TelegramService } from '../telegram/telegram.service.js'
+import { fetchThumbnailUrl } from '../utils/fetch-thumbnail.js'
 import { notificationMessage } from '../utils/messages.js'
 import { ApiService } from './api.service.js'
 import type { HelixChannel } from '@twurple/api'
@@ -211,13 +212,14 @@ export class EventSubService {
     channelInfo: HelixChannel,
     channelEntity: Channel
   ): Promise<void> {
-    const streamThumbnailUrl = await this.apiService.getThumbnail(
+    const thumbnailUrl = await fetchThumbnailUrl(
+      this.configService.serverConfig.public,
       channelInfo.name
     )
 
     const sendedMessage = await this.telegramService.api.sendPhoto(
       this.getChatId(channelEntity),
-      streamThumbnailUrl,
+      thumbnailUrl,
       {
         caption: notificationMessage({
           game: channelInfo.gameName,
