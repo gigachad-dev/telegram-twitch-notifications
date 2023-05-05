@@ -23,7 +23,7 @@ export async function fetchThumbnailUrl(
     for (const url of urls) {
       const thumbnailsUrl = url + timestamp()
       const response = await fetch(thumbnailsUrl)
-      if (response.status !== 200) {
+      if (response.redirected) {
         await wait(timeout)
         continue
       }
