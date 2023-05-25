@@ -1,6 +1,10 @@
 import { writeFile } from 'node:fs/promises'
 import { wait } from '@zero-dependency/utils'
 import { thumbnailsPath } from '../config/config.service.js'
+import { ThumbnailMetrics } from '../metrics/thumbnail.js'
+
+const thumbnailMetrics = new ThumbnailMetrics()
+await thumbnailMetrics.init()
 
 const timestamp = () => `?timestamp=${Date.now()}`
 
@@ -8,6 +12,10 @@ export async function fetchThumbnailUrl(
   hostname: string,
   username: string
 ): Promise<string> {
+  //
+  const metric = thumbnailMetrics.createMetric(username)
+  //
+
   const baseUrl = `https://static-cdn.jtvnw.net/previews-ttv/live_user_${username}`
   const attempts = 10 // (10 attempts * (30 seconds * 4 urls)) = 20 minutes
   const timeout = 30 * 1000 // 30 seconds
@@ -20,6 +28,10 @@ export async function fetchThumbnailUrl(
   ]
 
   for (let i = 0; i < attempts; i++) {
+    //
+    metric.iterations += 1
+    //
+
     for (const url of urls) {
       const thumbnailsUrl = url + timestamp()
       const response = await fetch(thumbnailsUrl)
@@ -38,7 +50,15 @@ export async function fetchThumbnailUrl(
     }
   }
 
-  return hostname !== 'localhost'
-    ? `${hostname}/thumbnails/fallback.png`
-    : urls[0] + timestamp()
+  const url =
+    hostname !== 'localhost'
+      ? `${hostname}/thumbnails/fallback.png`
+      : urls[0] + timestamp()
+
+  //
+  metric.url = url
+  await thumbnailMetrics.write(metric)
+  //
+
+  return url
 }
