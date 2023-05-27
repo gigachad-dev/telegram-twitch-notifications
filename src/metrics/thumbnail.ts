@@ -1,24 +1,23 @@
 import { AsyncAdapter, NodeProvider } from '@stenodb/node'
+import { singleton } from 'tsyringe'
 import { databasePath } from '../database/database.provider.js'
 import { Metric, ThumbnailSchema } from './thumbnail.schema.js'
+import type { AsyncProvider } from '@stenodb/node'
 
+@singleton()
 export class ThumbnailMetrics {
-  private metricDatabaseProvider: NodeProvider
-  private metricDatabase: AsyncAdapter<ThumbnailSchema>
+  private provider: NodeProvider
+  private adapter: AsyncAdapter<ThumbnailSchema>
+  private db: AsyncProvider<ThumbnailSchema>
 
   constructor() {
-    this.metricDatabaseProvider = new NodeProvider({
-      path: databasePath
+    this.provider = new NodeProvider({ path: databasePath })
+    this.adapter = new AsyncAdapter('thumbnail-metrics', ThumbnailSchema, {
+      metrics: []
     })
-
-    this.metricDatabase = new AsyncAdapter(
-      'fetch-thumbnail-metrics',
-      ThumbnailSchema,
-      { metrics: [] }
-    )
   }
 
-  private get currentDate() {
+  private get currentDate(): string {
     return new Date().toLocaleString()
   }
 
@@ -31,13 +30,13 @@ export class ThumbnailMetrics {
   }
 
   async init(): Promise<void> {
-    await this.metricDatabaseProvider.create(this.metricDatabase)
-    await this.metricDatabase.read()
+    this.db = await this.provider.create(this.adapter)
+    await this.db.read()
   }
 
   async write(metric: Metric): Promise<void> {
     metric.end = this.currentDate
-    this.metricDatabase.data!.metrics.push(metric)
-    await this.metricDatabase.write()
+    this.adapter.data!.metrics.push(metric)
+    await this.adapter.write()
   }
 }

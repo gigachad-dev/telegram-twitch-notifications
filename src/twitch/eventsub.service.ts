@@ -4,6 +4,7 @@ import { singleton } from 'tsyringe'
 import { ConfigService } from '../config/config.service.js'
 import { DatabaseChannelsService } from '../database/channels.service.js'
 import { Channel } from '../entities/index.js'
+import { ThumbnailMetrics } from '../metrics/thumbnail.js'
 import { NgrokHostname } from '../ngrok.js'
 import { TelegramService } from '../telegram/telegram.service.js'
 import { fetchThumbnailUrl } from '../utils/fetch-thumbnail.js'
@@ -38,7 +39,8 @@ export class EventSubService {
     private readonly configService: ConfigService,
     private readonly dbChannelsService: DatabaseChannelsService,
     private readonly telegramService: TelegramService,
-    private readonly apiService: ApiService
+    private readonly apiService: ApiService,
+    private readonly thumbnailMetrics: ThumbnailMetrics
   ) {}
 
   async init(): Promise<void> {
@@ -52,6 +54,7 @@ export class EventSubService {
     })
 
     await this.apiService.apiClient.eventSub.deleteAllSubscriptions()
+    await this.thumbnailMetrics.init()
   }
 
   get middleware(): EventSubMiddleware {
@@ -214,7 +217,8 @@ export class EventSubService {
   ): Promise<void> {
     const thumbnailUrl = await fetchThumbnailUrl(
       this.configService.serverConfig.hostname,
-      channelInfo.name
+      channelInfo.name,
+      this.thumbnailMetrics
     )
 
     const sendedMessage = await this.telegramService.api.sendPhoto(

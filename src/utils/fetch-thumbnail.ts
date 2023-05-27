@@ -1,16 +1,14 @@
 import { writeFile } from 'node:fs/promises'
 import { wait } from '@zero-dependency/utils'
 import { thumbnailsPath } from '../config/config.service.js'
-import { ThumbnailMetrics } from '../metrics/thumbnail.js'
-
-const thumbnailMetrics = new ThumbnailMetrics()
-await thumbnailMetrics.init()
+import type { ThumbnailMetrics } from '../metrics/thumbnail.js'
 
 const timestamp = () => `?timestamp=${Date.now()}`
 
 export async function fetchThumbnailUrl(
   hostname: string,
-  username: string
+  username: string,
+  thumbnailMetrics: ThumbnailMetrics
 ): Promise<string> {
   //
   const metric = thumbnailMetrics.createMetric(username)

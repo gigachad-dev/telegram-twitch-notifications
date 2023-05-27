@@ -20,7 +20,9 @@ export class ConfigProvider {
   public readonly config: Environments
 
   constructor() {
-    dotenv.config({ path: envPath })
+    if (process.env['NODE_ENV'] === 'production') {
+      dotenv.config({ path: envPath })
+    }
 
     this.config = cleanEnv<Environments>(process.env, {
       BOT_TOKEN: str(),
