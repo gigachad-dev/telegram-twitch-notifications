@@ -6,8 +6,8 @@ import type { AsyncProvider } from '@stenodb/node'
 
 @singleton()
 export class ThumbnailMetrics {
-  private provider: NodeProvider
-  private adapter: AsyncAdapter<ThumbnailSchema>
+  private readonly provider: NodeProvider
+  private readonly adapter: AsyncAdapter<ThumbnailSchema>
   private db: AsyncProvider<ThumbnailSchema>
 
   constructor() {
@@ -36,7 +36,7 @@ export class ThumbnailMetrics {
 
   async write(metric: Metric): Promise<void> {
     metric.end = this.currentDate
-    this.adapter.data!.metrics.push(metric)
-    await this.adapter.write()
+    this.db.data!.metrics.push(metric)
+    await this.db.write()
   }
 }
