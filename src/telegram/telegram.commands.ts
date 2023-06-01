@@ -1,18 +1,14 @@
-import { singleton } from 'tsyringe'
-import { EventSubService } from '../twitch/eventsub.service.js'
 import { streamsMessage } from '../utils/messages.js'
 import { ChannelsCommand } from './commands/channels.js'
 import { DeleteMessageCommand } from './commands/delete-message.js'
 import { StreamsCommmand } from './commands/streams.js'
 import { WatchersCommand } from './commands/watchers.js'
-import { TelegramService } from './telegram.service.js'
 import type { ChatClient } from '@twurple/chat'
+import type { Bot, Context } from 'grammy'
 
-@singleton()
 export class TelegramCommands {
   constructor(
-    private readonly telegramService: TelegramService,
-    private readonly eventSubService: EventSubService,
+    private readonly bot: Bot<Context>,
     private readonly deleteMessageCommand: DeleteMessageCommand,
     private readonly channelsCommand: ChannelsCommand,
     private readonly streamsCommand: StreamsCommmand,
@@ -25,7 +21,7 @@ export class TelegramCommands {
     this.streamsCommand.init()
     this.watchersCommand.init()
 
-    await this.telegramService.api.setMyCommands([
+    await this.bot.api.setMyCommands([
       {
         command: 'delete',
         description: 'Ответьте на сообщение, чтобы удалить его.'
@@ -39,8 +35,6 @@ export class TelegramCommands {
         description: 'Получить список каналов.'
       }
     ])
-
-    await this.telegramService.initialize(this.eventSubService)
   }
 
   async sendMessageFromTwitch(
@@ -50,7 +44,7 @@ export class TelegramCommands {
     message: string
   ): Promise<void> {
     try {
-      await this.telegramService.api.sendMessage(
+      await this.bot.api.sendMessage(
         chatId,
         streamsMessage({
           channel,

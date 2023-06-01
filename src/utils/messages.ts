@@ -1,7 +1,7 @@
 import { formatDuration, intervalToDuration } from 'date-fns'
 import dedent from 'dedent'
 import { escapeMarkdown } from './escapeMarkdown.js'
-import type { Channel } from '../entities/channels.js'
+import type { Channel } from '../database/channel/channels.schema.js'
 import type { HelixStream } from '@twurple/api'
 
 interface NotificationMessageArgs {

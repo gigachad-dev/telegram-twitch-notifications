@@ -1,17 +1,16 @@
 import { writeFile } from 'node:fs/promises'
 import { wait } from '@zero-dependency/utils'
-import { thumbnailsPath } from '../config/config.service.js'
-import type { ThumbnailMetrics } from '../metrics/thumbnail.js'
+import { thumbnailsPath } from '../config/paths.js'
+import { databaseThumbnail } from '../database/index.js'
 
 const timestamp = () => `?timestamp=${Date.now()}`
 
 export async function fetchThumbnailUrl(
   hostname: string,
-  username: string,
-  thumbnailMetrics: ThumbnailMetrics
+  username: string
 ): Promise<string> {
   //
-  const metric = thumbnailMetrics.createMetric(username)
+  const metric = databaseThumbnail.createMetric(username)
   //
 
   const baseUrl = `https://static-cdn.jtvnw.net/previews-ttv/live_user_${username}`
@@ -55,7 +54,7 @@ export async function fetchThumbnailUrl(
 
   //
   metric.url = url
-  await thumbnailMetrics.write(metric)
+  await databaseThumbnail.write(metric)
   //
 
   return url

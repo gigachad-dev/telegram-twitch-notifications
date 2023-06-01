@@ -1,37 +1,54 @@
 import 'reflect-metadata'
-import { autoInjectable, container } from 'tsyringe'
-import { ConfigService } from './config/config.service.js'
-import { DatabaseService } from './database/database.service.js'
+import { Bot } from 'grammy'
+import { env } from './config/env.js'
+import { databaseTokens } from './database/index.js'
 import { ExpressService } from './express/express.service.js'
+import { ChannelsCommand } from './telegram/commands/channels.js'
+import { DeleteMessageCommand } from './telegram/commands/delete-message.js'
+import { StreamsCommmand } from './telegram/commands/streams.js'
+import { WatchersCommand } from './telegram/commands/watchers.js'
+import { TelegramCommands } from './telegram/telegram.commands.js'
+import { TelegramMiddleware } from './telegram/telegram.middleware.js'
 import { ApiService } from './twitch/api.service.js'
 import { AuthService } from './twitch/auth.service.js'
 import { ChatService } from './twitch/chat.service.js'
 import { EventSubService } from './twitch/eventsub.service.js'
 
-@autoInjectable()
-class App {
-  constructor(
-    private readonly configService: ConfigService,
-    private readonly databaseService: DatabaseService,
-    private readonly authService: AuthService,
-    private readonly apiService: ApiService,
-    private readonly eventSubService: EventSubService,
-    private readonly chatService: ChatService,
-    private readonly expressService: ExpressService
-  ) {}
+const bot = new Bot(env.BOT_TOKEN)
 
-  async initialize(): Promise<void> {
-    await this.databaseService.init()
-    await this.authService.init()
-    await this.apiService.init()
-    await this.expressService.init()
-    await this.chatService.init()
+const authService = new AuthService(databaseTokens)
+await authService.init()
 
-    if (!this.configService.isDev) {
-      const { hostname, port } = this.configService.serverConfig
-      console.log(`Started ${hostname} with ${port} port`)
-    }
+const apiService = new ApiService(authService)
+const eventSubService = new EventSubService(apiService, bot)
+
+const botMiddleware = new TelegramMiddleware()
+const deleteMessageCommand = new DeleteMessageCommand(bot, botMiddleware)
+const channelsCommand = new ChannelsCommand(
+  bot,
+  apiService,
+  eventSubService,
+  botMiddleware
+)
+const streamsCommand = new StreamsCommmand(bot, apiService, botMiddleware)
+const watchersCommand = new WatchersCommand(bot, apiService, botMiddleware)
+const botCommands = new TelegramCommands(
+  bot,
+  deleteMessageCommand,
+  channelsCommand,
+  streamsCommand,
+  watchersCommand
+)
+
+const chatService = new ChatService(authService, botCommands)
+await chatService.init()
+
+const expressService = new ExpressService(eventSubService)
+await expressService.init()
+
+bot.start({
+  allowed_updates: ['message', 'callback_query'],
+  onStart() {
+    console.log('Bot started!')
   }
-}
-
-await container.resolve(App).initialize()
+})

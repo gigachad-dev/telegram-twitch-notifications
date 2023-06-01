@@ -1,15 +1,11 @@
 import { ApiClient } from '@twurple/api'
-import { singleton } from 'tsyringe'
 import { AuthService } from './auth.service.js'
 import type { HelixChannel, HelixStream, HelixUser } from '@twurple/api'
 
-@singleton()
 export class ApiService {
   apiClient: ApiClient
 
-  constructor(private readonly authService: AuthService) {}
-
-  async init(): Promise<void> {
+  constructor(private readonly authService: AuthService) {
     this.apiClient = new ApiClient({ authProvider: this.authService.provider })
   }
 

@@ -1,26 +1,22 @@
 import dedent from 'dedent'
-import { singleton } from 'tsyringe'
-import { DatabaseWatchersService } from '../../database/watchers.service.js'
-import { Watcher } from '../../entities/watchers.js'
+import { databaseWatchers } from '../../database/index.js'
+import { Watcher } from '../../database/watchers/watchers.schema.js'
 import { ApiService } from '../../twitch/api.service.js'
 import { parseMatch } from '../../utils/parse-match.js'
 import { TelegramMiddleware } from '../telegram.middleware.js'
-import { TelegramService } from '../telegram.service.js'
-import type { CommandContext, Context } from 'grammy'
+import type { Bot, CommandContext, Context } from 'grammy'
 
 type WatchersType = 'allowed_words' | 'ignored_users'
 
-@singleton()
 export class WatchersCommand {
   constructor(
+    private readonly bot: Bot<Context>,
     private readonly apiService: ApiService,
-    private readonly telegramService: TelegramService,
-    private readonly telegramMiddleware: TelegramMiddleware,
-    private readonly watchersService: DatabaseWatchersService
+    private readonly telegramMiddleware: TelegramMiddleware
   ) {}
 
   init(): void {
-    this.telegramService.command(
+    this.bot.command(
       'watchers',
       (ctx, next) => this.telegramMiddleware.isOwner(ctx, next),
       (ctx) => this.execute(ctx)
@@ -51,7 +47,7 @@ export class WatchersCommand {
   }
 
   private getWatchers(ctx: CommandContext<Context>): string {
-    const watchers = this.watchersService.findWatchers(ctx.chat.id)
+    const watchers = databaseWatchers.findWatchers(ctx.chat.id)
     if (!watchers) return 'У вас отсутствуют подписки.'
 
     return dedent`
@@ -67,7 +63,7 @@ export class WatchersCommand {
   ): Promise<string> {
     if (!input) return 'Укажите запрос на добавление/удаление.'
 
-    const watchers = this.watchersService.findWatchers(ctx.chat.id)
+    const watchers = databaseWatchers.findWatchers(ctx.chat.id)
     if (watchers) {
       if (type === 'ignored_users') {
         const channelInfo = await this.apiService.getChannelByName(input)
@@ -86,10 +82,10 @@ export class WatchersCommand {
           ? new Watcher(ctx.chat.id, [input])
           : new Watcher(ctx.chat.id, [], [input])
 
-      this.watchersService.data.push(newWatchersOptions)
+      databaseWatchers.data.push(newWatchersOptions)
     }
 
-    await this.watchersService.write()
+    await databaseWatchers.write()
     return 'Сохранено!'
   }
 }

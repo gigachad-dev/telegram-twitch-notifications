@@ -1,24 +1,19 @@
 import { ChatClient } from '@twurple/chat'
-import { singleton } from 'tsyringe'
-import { DatabaseChannelsService } from '../database/channels.service.js'
-import { DatabaseWatchersService } from '../database/watchers.service.js'
+import { databaseChannels, databaseWatchers } from '../database/index.js'
 import { TelegramCommands } from '../telegram/telegram.commands.js'
 import { AuthService } from './auth.service.js'
 import type { PrivateMessage } from '@twurple/chat'
 
-@singleton()
 export class ChatService {
   private chatClient: ChatClient
 
   constructor(
     private readonly authService: AuthService,
-    private readonly telegramCommands: TelegramCommands,
-    private readonly channelsService: DatabaseChannelsService,
-    private readonly watchersService: DatabaseWatchersService
+    private readonly telegramCommands: TelegramCommands
   ) {}
 
   async init(): Promise<void> {
-    const channels = this.channelsService.data!.channels.map(
+    const channels = databaseChannels.data!.channels.map(
       (channel) => channel.displayName
     )
 
@@ -44,7 +39,7 @@ export class ChatService {
     text: string,
     msg: PrivateMessage
   ): void {
-    for (const watcher of this.watchersService.data) {
+    for (const watcher of databaseWatchers.data) {
       const isIgnoredUser = watcher.ignored_users.find((match) =>
         match.includes(sender)
       )

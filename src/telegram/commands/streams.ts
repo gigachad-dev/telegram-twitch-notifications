@@ -1,25 +1,21 @@
 import { Menu } from '@grammyjs/menu'
 import dedent from 'dedent'
-import { CommandContext, Context } from 'grammy'
-import { singleton } from 'tsyringe'
-import { DatabaseChannelsService } from '../../database/channels.service.js'
+import { Bot, CommandContext, Context } from 'grammy'
+import { databaseChannels } from '../../database/index.js'
 import { ApiService } from '../../twitch/api.service.js'
 import { getRandomEmoji } from '../../utils/get-random-emoji.js'
 import { channelsOnlineMessage } from '../../utils/messages.js'
 import { TTLCache } from '../../utils/ttl-cache.js'
 import { TelegramMiddleware } from '../telegram.middleware.js'
-import { TelegramService } from '../telegram.service.js'
 
-@singleton()
 export class StreamsCommmand {
   private readonly cache = new TTLCache(600 * 1000 /* 600 sec */)
   private refreshStreamsMenu: Menu<Context>
 
   constructor(
-    private readonly telegramService: TelegramService,
-    private readonly telegramMiddleware: TelegramMiddleware,
-    private readonly channelsService: DatabaseChannelsService,
-    private readonly apiService: ApiService
+    private readonly bot: Bot<Context>,
+    private readonly apiService: ApiService,
+    private readonly telegramMiddleware: TelegramMiddleware
   ) {}
 
   init(): void {
@@ -53,9 +49,9 @@ export class StreamsCommmand {
       }
     )
 
-    this.telegramService.use(this.refreshStreamsMenu)
+    this.bot.use(this.refreshStreamsMenu)
 
-    this.telegramService.command(
+    this.bot.command(
       'streams',
       (ctx, next) => this.telegramMiddleware.isForum(ctx, next),
       (ctx) => this.execute(ctx)
@@ -86,7 +82,7 @@ export class StreamsCommmand {
     const cachedStreams = this.cache.get('streams')
     if (cachedStreams) return { streams: cachedStreams, cache: true }
 
-    const channelsIds = this.channelsService
+    const channelsIds = databaseChannels
       .data!.channels.filter(
         (channel) => channel.stream && channel.stream.endedAt === null
       )

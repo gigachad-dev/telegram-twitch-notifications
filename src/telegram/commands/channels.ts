@@ -1,32 +1,28 @@
 import dedent from 'dedent'
-import { singleton } from 'tsyringe'
-import { DatabaseChannelsService } from '../../database/channels.service.js'
-import { Channel } from '../../entities/channels.js'
+import { Channel } from '../../database/channel/channels.schema.js'
+import { databaseChannels } from '../../database/index.js'
 import { ApiService } from '../../twitch/api.service.js'
 import { EventSubService } from '../../twitch/eventsub.service.js'
 import { channelsMessage } from '../../utils/messages.js'
 import { parseMatch } from '../../utils/parse-match.js'
 import { TelegramMiddleware } from '../telegram.middleware.js'
-import { TelegramService } from '../telegram.service.js'
 import type { ChatClient } from '@twurple/chat'
-import type { CommandContext, Context } from 'grammy'
+import type { Bot, CommandContext, Context } from 'grammy'
 
-@singleton()
 export class ChannelsCommand {
   private chatClient: ChatClient
 
   constructor(
-    private readonly telegramService: TelegramService,
-    private readonly telegramMiddleware: TelegramMiddleware,
-    private readonly eventSubService: EventSubService,
+    private readonly bot: Bot<Context>,
     private readonly apiService: ApiService,
-    private readonly channelsService: DatabaseChannelsService
+    private readonly eventSubService: EventSubService,
+    private readonly telegramMiddleware: TelegramMiddleware
   ) {}
 
   init(chatClient: ChatClient): void {
     this.chatClient = chatClient
 
-    this.telegramService.command(
+    this.bot.command(
       'channels',
       (ctx, next) => {
         const { command } = parseMatch(ctx.match)
@@ -62,7 +58,7 @@ export class ChannelsCommand {
   }
 
   private async getChannels(ctx: CommandContext<Context>): Promise<void> {
-    const channels = this.channelsService.data!.channels
+    const channels = databaseChannels.data!.channels
     if (!channels.length) {
       ctx.reply('Нет каналов.', {
         reply_to_message_id: ctx.message?.message_id,
@@ -95,9 +91,7 @@ export class ChannelsCommand {
 
       const alreadySubscribedChannels: string[] = []
       for (const channel of channelsInfo) {
-        const channelEntity = this.channelsService.data!.getChannelById(
-          channel.id
-        )
+        const channelEntity = databaseChannels.data!.getChannelById(channel.id)
 
         if (channelEntity) {
           alreadySubscribedChannels.push(channel.id)
@@ -109,8 +103,8 @@ export class ChannelsCommand {
         newChannel.displayName = channel.displayName
         newChannel.chatId = ctx.message?.message_thread_id || ctx.chat.id
 
-        this.channelsService.data?.addChannel(newChannel)
-        await this.channelsService.write()
+        databaseChannels.data?.addChannel(newChannel)
+        await databaseChannels.write()
         await this.eventSubService.subscribeEvent(channel.id)
       }
 
@@ -145,13 +139,13 @@ export class ChannelsCommand {
         throw new Error('Укажите никнейм канала.')
       }
 
-      const channel = this.channelsService.data!.getChannelByName(matches)
+      const channel = databaseChannels.data!.getChannelByName(matches)
       if (!channel) {
         throw new Error('Канал не найден.')
       }
 
-      this.channelsService.data!.deleteChannel(channel.channelId)
-      await this.channelsService.write()
+      databaseChannels.data!.deleteChannel(channel.channelId)
+      await databaseChannels.write()
       await this.eventSubService.unsubscribeEvent(channel.channelId)
       this.chatClient.part(channel.displayName)
 
