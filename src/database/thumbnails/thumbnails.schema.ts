@@ -1,6 +1,6 @@
 import { Type } from 'class-transformer'
 
-export class ThumbnailSchema {
+export class ThumbnailsSchema {
   @Type(() => Metric)
   metrics: Metric[] = []
 }

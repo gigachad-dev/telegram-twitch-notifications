@@ -1,14 +1,12 @@
 import { EventSubMiddleware } from '@twurple/eventsub-http'
 import { differenceInSeconds } from 'date-fns'
-import { singleton } from 'tsyringe'
-import { ConfigService } from '../config/config.service.js'
-import { DatabaseChannelsService } from '../database/channels.service.js'
-import { Channel } from '../entities/index.js'
-import { ThumbnailMetrics } from '../metrics/thumbnail.js'
-import { NgrokHostname } from '../ngrok.js'
-import { TelegramService } from '../telegram/telegram.service.js'
+import { Bot, Context } from 'grammy'
+import { env } from '../config/env.js'
+import { Channel } from '../database/channel/channels.schema.js'
+import { databaseChannels } from '../database/index.js'
 import { fetchThumbnailUrl } from '../utils/fetch-thumbnail.js'
 import { notificationMessage } from '../utils/messages.js'
+import { getNgrokHostname } from '../utils/ngrok-hostname.js'
 import { ApiService } from './api.service.js'
 import type { HelixChannel } from '@twurple/api'
 import type {
@@ -29,32 +27,32 @@ interface StreamEnded {
   dispose: () => void
 }
 
-@singleton()
 export class EventSubService {
   private eventsub: EventSubMiddleware
   private readonly events = new Map<string, ChannelEvents>()
   private readonly streamsEnded = new Map<string, StreamEnded>()
 
   constructor(
-    private readonly configService: ConfigService,
-    private readonly dbChannelsService: DatabaseChannelsService,
-    private readonly telegramService: TelegramService,
     private readonly apiService: ApiService,
-    private readonly thumbnailMetrics: ThumbnailMetrics
+    private readonly bot: Bot<Context>
   ) {}
 
   async init(): Promise<void> {
     this.eventsub = new EventSubMiddleware({
       apiClient: this.apiService.apiClient,
-      hostName: await NgrokHostname(this.configService),
+      hostName: await getNgrokHostname(),
       pathPrefix: '/twitch',
       strictHostCheck: true,
-      secret: this.configService.twitchTokens.clientSecret,
+      secret: env.CLIENT_SECRET,
       legacySecrets: false
     })
 
     await this.apiService.apiClient.eventSub.deleteAllSubscriptions()
-    await this.thumbnailMetrics.init()
+
+    for (const channel of databaseChannels.data!.channels) {
+      console.log(`Add subscription for ${channel.displayName}`)
+      await this.subscribeEvent(channel.channelId)
+    }
   }
 
   get middleware(): EventSubMiddleware {
@@ -62,13 +60,11 @@ export class EventSubService {
   }
 
   private getChatId(channelEntity: Channel): number {
-    return this.configService.isDev
-      ? channelEntity.chatId
-      : this.configService.telegramTokens.chatId
+    return env.isDev ? channelEntity.chatId : env.CHAT_ID
   }
 
   private getThreadId(channelEntity: Channel): number | undefined {
-    return this.configService.isDev ? undefined : channelEntity.chatId
+    return env.isDev ? undefined : channelEntity.chatId
   }
 
   async subscribeEvent(channelId: string): Promise<void> {
@@ -108,7 +104,7 @@ export class EventSubService {
     )
     if (!channelInfo) return
 
-    const channelEntity = this.dbChannelsService.data!.getChannelById(
+    const channelEntity = databaseChannels.data!.getChannelById(
       event.broadcasterId
     )
     if (
@@ -125,7 +121,7 @@ export class EventSubService {
     })
 
     try {
-      await this.telegramService.api.editMessageCaption(
+      await this.bot.api.editMessageCaption(
         this.getChatId(channelEntity),
         channelEntity.stream.messageId,
         { caption: photoDescription }
@@ -139,7 +135,7 @@ export class EventSubService {
       game: event.categoryName
     })
 
-    await this.dbChannelsService.write()
+    await databaseChannels.write()
   }
 
   private async onStreamOnline(
@@ -152,9 +148,7 @@ export class EventSubService {
     )
     if (!channelInfo) return
 
-    const channelEntity = this.dbChannelsService.data!.getChannelById(
-      channelInfo.id
-    )
+    const channelEntity = databaseChannels.data!.getChannelById(channelInfo.id)
     if (!channelEntity) return
 
     const isEndedStream = this.streamsEnded.get(channelEntity.channelId)
@@ -193,7 +187,7 @@ export class EventSubService {
     })
 
     try {
-      await this.telegramService.api.editMessageCaption(
+      await this.bot.api.editMessageCaption(
         this.getChatId(channelEntity),
         channelEntity.stream!.messageId,
         { caption: photoDescription }
@@ -208,7 +202,7 @@ export class EventSubService {
       endedAt: null
     })
 
-    await this.dbChannelsService.write()
+    await databaseChannels.write()
   }
 
   async sendMessage(
@@ -216,12 +210,11 @@ export class EventSubService {
     channelEntity: Channel
   ): Promise<void> {
     const thumbnailUrl = await fetchThumbnailUrl(
-      this.configService.serverConfig.hostname,
-      channelInfo.name,
-      this.thumbnailMetrics
+      env.SERVER_HOSTNAME,
+      channelInfo.name
     )
 
-    const sendedMessage = await this.telegramService.api.sendPhoto(
+    const sendedMessage = await this.bot.api.sendPhoto(
       this.getChatId(channelEntity),
       thumbnailUrl,
       {
@@ -231,7 +224,7 @@ export class EventSubService {
           username: channelInfo.displayName
         }),
         message_thread_id: this.getThreadId(channelEntity),
-        disable_notification: this.configService.isDev
+        disable_notification: env.isDev
       }
     )
 
@@ -243,16 +236,14 @@ export class EventSubService {
       endedAt: null
     })
 
-    await this.dbChannelsService.write()
+    await databaseChannels.write()
   }
 
   private async onStreamOffline(
     event: EventSubStreamOfflineEvent
   ): Promise<void> {
     const channelInfo = await event.getBroadcaster()
-    const channelEntity = this.dbChannelsService.data!.getChannelById(
-      channelInfo.id
-    )
+    const channelEntity = databaseChannels.data!.getChannelById(channelInfo.id)
     if (!channelEntity?.stream || channelEntity.stream.endedAt) return
 
     const endedAt = new Date()
@@ -266,7 +257,7 @@ export class EventSubService {
 
     const editMessage = async () => {
       try {
-        await this.telegramService.api.editMessageCaption(
+        await this.bot.api.editMessageCaption(
           this.getChatId(channelEntity),
           channelEntity.stream!.messageId,
           { caption: photoDescription }
@@ -277,7 +268,7 @@ export class EventSubService {
 
       this.streamsEnded.delete(channelEntity.channelId)
       channelEntity.updateStream({ endedAt })
-      await this.dbChannelsService.write()
+      await databaseChannels.write()
     }
 
     const interval = setTimeout(editMessage, 30 * 1000)

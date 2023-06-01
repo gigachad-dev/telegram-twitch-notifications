@@ -3,35 +3,29 @@ import {
   accessTokenIsExpired,
   RefreshingAuthProvider
 } from '@twurple/auth'
-import { singleton } from 'tsyringe'
-import { ConfigService } from '../config/config.service.js'
-import { DatabaseTokensService } from '../database/tokens.service.js'
-import { Tokens } from '../entities/tokens.js'
+import { env } from '../config/env.js'
+import { DatabaseTokens } from '../database/tokens/tokens.js'
+import { Tokens } from '../database/tokens/tokens.schema.js'
 
-@singleton()
 export class AuthService {
-  private _authProvider: RefreshingAuthProvider
+  private authProvider: RefreshingAuthProvider
 
-  constructor(
-    private readonly configService: ConfigService,
-    private readonly dbTokensService: DatabaseTokensService
-  ) {}
+  constructor(private readonly databaseTokens: DatabaseTokens) {}
 
   async init(): Promise<void> {
-    const { clientId, clientSecret } = this.configService.twitchTokens
     const tokens = this.authTokens()
 
-    this._authProvider = new RefreshingAuthProvider({
-      clientId,
-      clientSecret,
+    this.authProvider = new RefreshingAuthProvider({
+      clientId: env.CLIENT_ID,
+      clientSecret: env.CLIENT_SECRET,
       onRefresh: (userId, token) => this.onRefreshToken(token)
     })
 
-    await this._authProvider.addUserForToken(tokens, ['chat'])
+    await this.authProvider.addUserForToken(tokens, ['chat'])
   }
 
   get provider(): RefreshingAuthProvider {
-    return this._authProvider
+    return this.authProvider
   }
 
   private async onRefreshToken(accessToken: AccessToken): Promise<void> {
@@ -43,19 +37,18 @@ export class AuthService {
       accessToken.scope
     )
 
-    await this.dbTokensService.write(tokens)
+    await this.databaseTokens.write(tokens)
   }
 
   private authTokens() {
-    const { accessToken, refreshToken } = this.configService.twitchTokens
     const initialTokens = {
-      accessToken,
-      refreshToken,
+      accessToken: env.ACCESS_TOKEN,
+      refreshToken: env.REFRESH_TOKEN,
       expiresIn: 1,
       obtainmentTimestamp: 0
     }
 
-    const currentTokens = this.dbTokensService.data
+    const currentTokens = this.databaseTokens.data
     if (currentTokens) {
       const parsedTokens = {
         ...currentTokens,

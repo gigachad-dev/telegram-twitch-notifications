@@ -1,6 +1,6 @@
 import { Type } from 'class-transformer'
-import { Stream } from './stream.js'
-import type { StreamSchema } from './stream.js'
+import { Stream } from './stream.schema.js'
+import type { StreamSchema } from './stream.schema.js'
 
 interface ChannelSchema {
   channelId: string
