@@ -2,7 +2,6 @@ import 'reflect-metadata'
 import { Bot } from 'grammy'
 import { env } from './config/env.js'
 import { databaseTokens } from './database/index.js'
-import { ExpressService } from './express/express.service.js'
 import { ChannelsCommand } from './telegram/commands/channels.js'
 import { DeleteMessageCommand } from './telegram/commands/delete-message.js'
 import { StreamsCommmand } from './telegram/commands/streams.js'
@@ -21,6 +20,7 @@ await authService.init()
 
 const apiService = new ApiService(authService)
 const eventSubService = new EventSubService(apiService, bot)
+await eventSubService.init()
 
 const botMiddleware = new TelegramMiddleware()
 const deleteMessageCommand = new DeleteMessageCommand(bot, botMiddleware)
@@ -42,9 +42,6 @@ const botCommands = new TelegramCommands(
 
 const chatService = new ChatService(authService, botCommands)
 await chatService.init()
-
-const expressService = new ExpressService(eventSubService)
-await expressService.init()
 
 bot.start({
   allowed_updates: ['message', 'callback_query'],

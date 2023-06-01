@@ -1,10 +1,12 @@
-import { EventSubMiddleware } from '@twurple/eventsub-http'
+import {
+  EventSubHttpListener,
+  ReverseProxyAdapter
+} from '@twurple/eventsub-http'
 import { differenceInSeconds } from 'date-fns'
 import { Bot, Context } from 'grammy'
 import { env } from '../config/env.js'
 import { Channel } from '../database/channel/channels.schema.js'
 import { databaseChannels } from '../database/index.js'
-import { fetchThumbnailUrl } from '../utils/fetch-thumbnail.js'
 import { notificationMessage } from '../utils/messages.js'
 import { getNgrokHostname } from '../utils/ngrok-hostname.js'
 import { ApiService } from './api.service.js'
@@ -28,7 +30,7 @@ interface StreamEnded {
 }
 
 export class EventSubService {
-  private eventsub: EventSubMiddleware
+  private eventsub: EventSubHttpListener
   private readonly events = new Map<string, ChannelEvents>()
   private readonly streamsEnded = new Map<string, StreamEnded>()
 
@@ -38,24 +40,26 @@ export class EventSubService {
   ) {}
 
   async init(): Promise<void> {
-    this.eventsub = new EventSubMiddleware({
+    this.eventsub = new EventSubHttpListener({
+      legacySecrets: false,
       apiClient: this.apiService.apiClient,
-      hostName: await getNgrokHostname(),
-      pathPrefix: '/twitch',
-      strictHostCheck: true,
       secret: env.CLIENT_SECRET,
-      legacySecrets: false
+      adapter: new ReverseProxyAdapter({
+        hostName: await getNgrokHostname(),
+        port: env.SERVER_PORT
+      })
     })
 
-    await this.apiService.apiClient.eventSub.deleteAllSubscriptions()
+    this.eventsub.start()
+    this.eventsub.onSubscriptionCreateFailure(console.log)
 
+    await this.apiService.apiClient.eventSub.deleteAllSubscriptions()
     for (const channel of databaseChannels.data!.channels) {
-      console.log(`Add subscription for ${channel.displayName}`)
       await this.subscribeEvent(channel.channelId)
     }
   }
 
-  get middleware(): EventSubMiddleware {
+  get listener(): EventSubHttpListener {
     return this.eventsub
   }
 
@@ -127,7 +131,7 @@ export class EventSubService {
         { caption: photoDescription }
       )
     } catch (err) {
-      // console.log('editMessage:', err)
+      console.log('editMessage:', err)
     }
 
     channelEntity.updateStream({
@@ -209,11 +213,8 @@ export class EventSubService {
     channelInfo: HelixChannel,
     channelEntity: Channel
   ): Promise<void> {
-    const thumbnailUrl = await fetchThumbnailUrl(
-      env.SERVER_HOSTNAME,
-      channelInfo.name
-    )
-
+    // prettier-ignore
+    const thumbnailUrl = `https://static-cdn.jtvnw.net/previews-ttv/live_user_${channelInfo.name}-1920x1080.jpg?timestamp=${Date.now()}`
     const sendedMessage = await this.bot.api.sendPhoto(
       this.getChatId(channelEntity),
       thumbnailUrl,
@@ -263,7 +264,7 @@ export class EventSubService {
           { caption: photoDescription }
         )
       } catch (err) {
-        // console.log('onStreamOffline:', err)
+        console.log('onStreamOffline:', err)
       }
 
       this.streamsEnded.delete(channelEntity.channelId)
