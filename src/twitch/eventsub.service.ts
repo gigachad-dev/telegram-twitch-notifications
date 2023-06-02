@@ -8,7 +8,7 @@ import { env } from '../config/env.js'
 import { Channel } from '../database/channel/channels.schema.js'
 import { databaseChannels } from '../database/index.js'
 import { notificationMessage } from '../utils/messages.js'
-import { getNgrokHostname } from '../utils/ngrok-hostname.js'
+import { getServerHostname } from '../utils/server-hostname.js'
 import { ApiService } from './api.service.js'
 import type { HelixChannel } from '@twurple/api'
 import type {
@@ -45,7 +45,7 @@ export class EventSubService {
       apiClient: this.apiService.apiClient,
       secret: env.CLIENT_SECRET,
       adapter: new ReverseProxyAdapter({
-        hostName: await getNgrokHostname(),
+        hostName: getServerHostname(),
         port: env.SERVER_PORT
       })
     })
