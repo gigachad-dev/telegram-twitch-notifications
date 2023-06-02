@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "start": "node dist/index.js",
-    "dev": "doppler run -- nodemon",
+    "dev": "doppler run -- node dev.js",
     "build": "rm -rf dist && tsc",
     "format": "prettier --write --ignore-unknown **"
   },
