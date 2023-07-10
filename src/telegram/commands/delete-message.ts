@@ -16,22 +16,26 @@ export class DeleteMessageCommand {
   }
 
   private async execute(ctx: CommandContext<Context>): Promise<void> {
-    if (ctx.message?.reply_to_message?.text) {
-      const chatMember = await this.bot.api.getChatMember(
-        ctx.chat.id,
-        ctx.from!.id
-      )
-      if (
-        chatMember.status === 'creator' ||
-        chatMember.status === 'administrator'
-      ) {
-        await this.bot.api.deleteMessage(
+    try {
+      if (ctx.message?.reply_to_message?.text) {
+        const chatMember = await this.bot.api.getChatMember(
           ctx.chat.id,
-          ctx.message.reply_to_message.message_id
+          ctx.from!.id
         )
+        if (
+          chatMember.status === 'creator' ||
+          chatMember.status === 'administrator'
+        ) {
+          await this.bot.api.deleteMessage(
+            ctx.chat.id,
+            ctx.message.reply_to_message.message_id
+          )
+        }
       }
-    }
 
-    await this.bot.api.deleteMessage(ctx.chat.id, ctx.message!.message_id)
+      await this.bot.api.deleteMessage(ctx.chat.id, ctx.message!.message_id)
+    } catch (err) {
+      console.log('[delete-message]', err)
+    }
   }
 }

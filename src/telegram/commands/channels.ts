@@ -42,36 +42,42 @@ export class ChannelsCommand {
   private async execute(ctx: CommandContext<Context>): Promise<void> {
     const { command, matches } = parseMatch(ctx.match)
 
-    switch (command) {
-      case undefined: // channels
-        return this.getChannels(ctx)
-      case 'add': // channels add
-        return this.addChannel(ctx, matches)
-      case 'remove': // chaennels remove
-        return this.removeChannel(ctx, matches.at(0) ?? '')
-      default:
-        ctx.reply('Неизвестная команда.', {
-          reply_to_message_id: ctx.message?.message_id,
-          message_thread_id: ctx.message?.message_thread_id
-        })
+    try {
+      switch (command) {
+        case undefined: // channels
+          return this.getChannels(ctx)
+        case 'add': // channels add
+          return this.addChannel(ctx, matches)
+        case 'remove': // chaennels remove
+          return this.removeChannel(ctx, matches.at(0) ?? '')
+        default: {
+          ctx.reply('Неизвестная команда.', {
+            reply_to_message_id: ctx.message?.message_id,
+            message_thread_id: ctx.message?.message_thread_id
+          })
+        }
+      }
+    } catch (err) {
+      console.log(`[channels] ${command} ${matches.join(' ')}`, err)
     }
   }
 
   private async getChannels(ctx: CommandContext<Context>): Promise<void> {
     const channels = databaseChannels.data!.channels
+    const replyParams = {
+      reply_to_message_id: ctx.message?.message_id,
+      message_thread_id: ctx.message?.message_thread_id
+    }
+
     if (!channels.length) {
-      ctx.reply('Нет каналов.', {
-        reply_to_message_id: ctx.message?.message_id,
-        message_thread_id: ctx.message?.message_thread_id
-      })
+      ctx.reply('Нет каналов.', replyParams)
       return
     }
 
     ctx.reply(channelsMessage(channels), {
       parse_mode: 'Markdown',
       disable_web_page_preview: true,
-      reply_to_message_id: ctx.message?.message_id,
-      message_thread_id: ctx.message?.message_thread_id
+      ...replyParams
     })
   }
 
@@ -79,82 +85,85 @@ export class ChannelsCommand {
     ctx: CommandContext<Context>,
     matches: string[]
   ): Promise<void> {
-    try {
-      if (!matches.length) {
-        throw new Error('Укажите никнейм канала.')
+    const replyParams = {
+      disable_web_page_preview: true,
+      reply_to_message_id: ctx.message?.message_id,
+      message_thread_id: ctx.message?.message_thread_id
+    }
+
+    if (!matches.length) {
+      ctx.reply('Укажите никнейм канала.', replyParams)
+      return
+    }
+
+    const channelsInfo = await this.apiService.getChannelsByNames(matches)
+    if (!channelsInfo.length) {
+      ctx.reply(`Каналы ${matches.join(', ')} не найдены.`, replyParams)
+      return
+    }
+
+    const alreadySubscribedChannels: string[] = []
+    for (const channel of channelsInfo) {
+      const channelEntity = databaseChannels.data!.getChannelById(channel.id)
+
+      if (channelEntity) {
+        alreadySubscribedChannels.push(channel.id)
+        continue
       }
 
-      const channelsInfo = await this.apiService.getChannelsByNames(matches)
-      if (!channelsInfo.length) {
-        throw new Error(`Каналы ${matches.join(', ')} не найдены.`)
-      }
+      const newChannel = new Channel()
+      newChannel.channelId = channel.id
+      newChannel.displayName = channel.displayName
+      newChannel.chatId = ctx.message?.message_thread_id || ctx.chat.id
 
-      const alreadySubscribedChannels: string[] = []
-      for (const channel of channelsInfo) {
-        const channelEntity = databaseChannels.data!.getChannelById(channel.id)
+      databaseChannels.data?.addChannel(newChannel)
+      await databaseChannels.write()
+      await this.eventSubService.subscribeEvent(channel.id)
+    }
 
-        if (channelEntity) {
-          alreadySubscribedChannels.push(channel.id)
-          continue
-        }
+    const subscribedChannels = channelsInfo
+      .filter((channel) => !alreadySubscribedChannels.includes(channel.id))
+      .map((channel) => `https://twitch.tv/${channel.name}`)
+      .join('\n')
 
-        const newChannel = new Channel()
-        newChannel.channelId = channel.id
-        newChannel.displayName = channel.displayName
-        newChannel.chatId = ctx.message?.message_thread_id || ctx.chat.id
+    for (const username of matches) {
+      await this.chatClient.join(username)
+    }
 
-        databaseChannels.data?.addChannel(newChannel)
-        await databaseChannels.write()
-        await this.eventSubService.subscribeEvent(channel.id)
-      }
-
-      const subscribedChannels = channelsInfo
-        .filter((channel) => !alreadySubscribedChannels.includes(channel.id))
-        .map((channel) => `https://twitch.tv/${channel.name}`)
-        .join('\n')
-
-      for (const username of matches) {
-        await this.chatClient.join(username)
-      }
-
-      throw new Error(dedent`
+    ctx.reply(
+      dedent`
         Подписка на уведомления успешно создана.\n
         ${subscribedChannels}
-      `)
-    } catch (err) {
-      ctx.reply((err as Error).message, {
-        disable_web_page_preview: true,
-        reply_to_message_id: ctx.message?.message_id,
-        message_thread_id: ctx.message?.message_thread_id
-      })
-    }
+      `,
+      replyParams
+    )
   }
 
   private async removeChannel(
     ctx: CommandContext<Context>,
     matches: string
   ): Promise<void> {
-    try {
-      if (!matches.length) {
-        throw new Error('Укажите никнейм канала.')
-      }
-
-      const channel = databaseChannels.data!.getChannelByName(matches)
-      if (!channel) {
-        throw new Error('Канал не найден.')
-      }
-
-      databaseChannels.data!.deleteChannel(channel.channelId)
-      await databaseChannels.write()
-      await this.eventSubService.unsubscribeEvent(channel.channelId)
-      this.chatClient.part(channel.displayName)
-
-      throw new Error(`Канал отписан от уведомлений.`)
-    } catch (err) {
-      ctx.reply((err as Error).message, {
-        reply_to_message_id: ctx.message?.message_id,
-        message_thread_id: ctx.message?.message_thread_id
-      })
+    const replyParams = {
+      reply_to_message_id: ctx.message?.message_id,
+      message_thread_id: ctx.message?.message_thread_id
     }
+
+    if (!matches.length) {
+      ctx.reply('Укажите никнейм канала.', replyParams)
+      return
+    }
+
+    const channel = databaseChannels.data!.getChannelByName(matches)
+    if (!channel) {
+      ctx.reply('Канал не найден.', replyParams)
+      return
+    }
+
+    databaseChannels.data!.deleteChannel(channel.channelId)
+    await databaseChannels.write()
+    await this.eventSubService.unsubscribeEvent(channel.channelId)
+    this.chatClient.part(channel.displayName)
+
+    ctx.reply('Канал отписан от уведомлений.', replyParams)
   }
 }

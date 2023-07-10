@@ -59,23 +59,27 @@ export class StreamsCommmand {
   }
 
   private async execute(ctx: CommandContext<Context>): Promise<void> {
-    const { streams } = await this.fetchStreams()
+    try {
+      const { streams } = await this.fetchStreams()
 
-    if (!streams) {
-      ctx.reply('Нет стримов 😢', {
+      if (!streams) {
+        ctx.reply('Никто не стримит 😢', {
+          reply_to_message_id: ctx.message?.message_id,
+          message_thread_id: ctx.message?.message_thread_id
+        })
+        return
+      }
+
+      ctx.reply(streams, {
+        parse_mode: 'Markdown',
+        reply_markup: this.refreshStreamsMenu,
+        disable_web_page_preview: true,
         reply_to_message_id: ctx.message?.message_id,
         message_thread_id: ctx.message?.message_thread_id
       })
-      return
+    } catch (err) {
+      console.log('[streams]', err)
     }
-
-    ctx.reply(streams, {
-      parse_mode: 'Markdown',
-      reply_markup: this.refreshStreamsMenu,
-      disable_web_page_preview: true,
-      reply_to_message_id: ctx.message?.message_id,
-      message_thread_id: ctx.message?.message_thread_id
-    })
   }
 
   private async fetchStreams(): Promise<{ streams: string; cache: boolean }> {
