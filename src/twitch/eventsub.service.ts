@@ -1,12 +1,10 @@
-import {
-  EventSubHttpListener,
-  ReverseProxyAdapter
-} from '@twurple/eventsub-http'
+import { EventSubMiddleware } from '@twurple/eventsub-http'
 import { differenceInSeconds } from 'date-fns'
 import { Bot, Context } from 'grammy'
 import { env } from '../config/env.js'
 import { Channel } from '../database/channel/channels.schema.js'
 import { databaseChannels } from '../database/index.js'
+import { fetchThumbnailUrl } from '../utils/fetch-thumbnail.js'
 import { notificationMessage } from '../utils/messages.js'
 import { getServerHostname } from '../utils/server-hostname.js'
 import { ApiService } from './api.service.js'
@@ -30,7 +28,7 @@ interface StreamEnded {
 }
 
 export class EventSubService {
-  private eventsub: EventSubHttpListener
+  private eventsub: EventSubMiddleware
   private readonly events = new Map<string, ChannelEvents>()
   private readonly streamsEnded = new Map<string, StreamEnded>()
 
@@ -40,26 +38,26 @@ export class EventSubService {
   ) {}
 
   async init(): Promise<void> {
-    this.eventsub = new EventSubHttpListener({
-      legacySecrets: false,
+    this.eventsub = new EventSubMiddleware({
       apiClient: this.apiService.apiClient,
+      hostName: getServerHostname(),
+      pathPrefix: '/twitch',
+      strictHostCheck: true,
       secret: env.CLIENT_SECRET,
-      adapter: new ReverseProxyAdapter({
-        hostName: getServerHostname(),
-        port: env.SERVER_PORT
-      })
+      legacySecrets: false
     })
 
-    this.eventsub.start()
     this.eventsub.onSubscriptionCreateFailure(console.log)
-
     await this.apiService.apiClient.eventSub.deleteAllSubscriptions()
+  }
+
+  async addAllSubscriptions(): Promise<void> {
     for (const channel of databaseChannels.data!.channels) {
       await this.subscribeEvent(channel.channelId)
     }
   }
 
-  get listener(): EventSubHttpListener {
+  get listener(): EventSubMiddleware {
     return this.eventsub
   }
 
@@ -213,8 +211,11 @@ export class EventSubService {
     channelInfo: HelixChannel,
     channelEntity: Channel
   ): Promise<void> {
-    // prettier-ignore
-    const thumbnailUrl = `https://static-cdn.jtvnw.net/previews-ttv/live_user_${channelInfo.name}-1920x1080.jpg?timestamp=${Date.now()}`
+    const thumbnailUrl = await fetchThumbnailUrl(
+      env.SERVER_HOSTNAME,
+      channelInfo.name
+    )
+
     const sendedMessage = await this.bot.api.sendPhoto(
       this.getChatId(channelEntity),
       thumbnailUrl,
