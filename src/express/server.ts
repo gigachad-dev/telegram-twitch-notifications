@@ -13,7 +13,8 @@ export class ExpressService {
     // @ts-ignore
     this.eventSubService.listener.apply(this.server)
 
-    this.server.listen(env.SERVER_PORT, env.SERVER_HOSTNAME, async () => {
+    const hostname = env.isDev ? env.SERVER_HOSTNAME : '0.0.0.0'
+    this.server.listen(env.SERVER_PORT, hostname, async () => {
       await this.eventSubService.listener.markAsReady()
       await this.eventSubService.addAllSubscriptions()
     })

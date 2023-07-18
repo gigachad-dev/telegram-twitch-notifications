@@ -43,12 +43,15 @@ export class EventSubService {
       hostName: getServerHostname(),
       pathPrefix: '/twitch',
       strictHostCheck: true,
-      secret: env.CLIENT_SECRET,
-      legacySecrets: false
+      secret: env.CLIENT_SECRET
     })
 
     this.eventsub.onSubscriptionCreateFailure(console.log)
-    await this.apiService.apiClient.eventSub.deleteAllSubscriptions()
+    this.eventsub.onSubscriptionDeleteFailure(console.log)
+
+    if (env.isDev) {
+      await this.apiService.apiClient.eventSub.deleteAllSubscriptions()
+    }
   }
 
   async addAllSubscriptions(): Promise<void> {

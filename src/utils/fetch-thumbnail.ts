@@ -1,5 +1,5 @@
 import { writeFile } from 'node:fs/promises'
-import { wait } from '@zero-dependency/utils'
+import { sleep } from '@zero-dependency/utils'
 import { thumbnailsPath } from '../config/paths.js'
 
 const timestamp = () => `?timestamp=${Date.now()}`
@@ -24,7 +24,7 @@ export async function fetchThumbnailUrl(
       const thumbnailsUrl = url + timestamp()
       const response = await fetch(thumbnailsUrl)
       if (response.redirected) {
-        await wait(timeout)
+        await sleep(timeout)
         continue
       }
 
