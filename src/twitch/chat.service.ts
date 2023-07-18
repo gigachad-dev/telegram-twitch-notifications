@@ -1,8 +1,8 @@
-import { ChatClient } from '@twurple/chat'
+import { ChatClient, toUserName } from '@twurple/chat'
 import { databaseChannels, databaseWatchers } from '../database/index.js'
 import { TelegramCommands } from '../telegram/telegram.commands.js'
 import { AuthService } from './auth.service.js'
-import type { PrivateMessage } from '@twurple/chat'
+import type { ChatMessage } from '@twurple/chat'
 
 export class ChatService {
   private chatClient: ChatClient
@@ -23,7 +23,7 @@ export class ChatService {
       channels
     })
 
-    await this.chatClient.connect()
+    this.chatClient.connect()
     await this.telegramCommands.init(this.chatClient)
 
     this.chatClient.onAuthenticationFailure(([text, retryCount]) => {
@@ -37,7 +37,7 @@ export class ChatService {
     channel: string,
     sender: string,
     text: string,
-    msg: PrivateMessage
+    _msg: ChatMessage
   ): void {
     for (const watcher of databaseWatchers.data) {
       const isIgnoredUser = watcher.ignored_users.find((match) =>
@@ -50,7 +50,7 @@ export class ChatService {
       )
       if (isAllowedWord) {
         this.telegramCommands.sendMessageFromTwitch(
-          channel.slice(1),
+          toUserName(channel),
           sender,
           watcher.chatId,
           text
