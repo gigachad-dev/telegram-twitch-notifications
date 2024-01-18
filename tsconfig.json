@@ -6,7 +6,9 @@
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "moduleResolution": "NodeNext",
-    "noImplicitOverride": false
+    "noImplicitOverride": false,
+    "declaration": false,
+    "sourceMap": false
   },
   "include": [
     "src"
