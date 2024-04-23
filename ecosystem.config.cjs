@@ -1,9 +1,9 @@
-export default {
+module.exports = {
   apps: [
     {
       name: "twitch-notifier",
       script: "dist/index.js",
-      node_args: "--env_file .env"
+      env: {}
     }
   ]
 }
