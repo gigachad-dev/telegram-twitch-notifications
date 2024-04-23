@@ -1,10 +1,9 @@
-// import dotenv from 'dotenv'
 import { cleanEnv, num, str } from 'envalid'
-// import { envPath } from './paths.js'
+import { envPath } from './paths.js'
 
-// if (process.env['NODE_ENV'] === 'production') {
-//   dotenv.config({ path: envPath })
-// }
+if (process.env['NODE_ENV'] === 'development') {
+  (await import('dotenv')).config({ path: envPath })
+}
 
 export const env = cleanEnv(process.env, {
   BOT_TOKEN: str(),

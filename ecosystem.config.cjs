@@ -1,9 +1,11 @@
+const dotenv = require('dotenv')
+
 module.exports = {
   apps: [
     {
-      name: "twitch-notifier",
-      script: "dist/index.js",
-      env: {}
+      name: 'twitch-notifications',
+      script: 'dist/index.js',
+      env: dotenv.config().parsed
     }
   ]
 }
