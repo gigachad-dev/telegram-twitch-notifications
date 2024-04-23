@@ -17,6 +17,8 @@ export class ExpressService {
     this.server.listen(env.SERVER_PORT, hostname, async () => {
       await this.eventSubService.listener.markAsReady()
       await this.eventSubService.addAllSubscriptions()
+
+      console.log('Server is listening on port', env.SERVER_PORT)
     })
   }
 }
