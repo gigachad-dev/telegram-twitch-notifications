@@ -49,9 +49,7 @@ export class EventSubService {
     this.eventsub.onSubscriptionCreateFailure(console.log)
     this.eventsub.onSubscriptionDeleteFailure(console.log)
 
-    if (env.isDev) {
-      await this.apiService.apiClient.eventSub.deleteAllSubscriptions()
-    }
+    await this.apiService.apiClient.eventSub.deleteAllSubscriptions()
   }
 
   async addAllSubscriptions(): Promise<void> {
