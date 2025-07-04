@@ -21,20 +21,24 @@ export async function fetchThumbnailUrl(
 
   for (let i = 0; i < attempts; i++) {
     for (const url of urls) {
-      const thumbnailsUrl = url + timestamp()
-      const response = await fetch(thumbnailsUrl)
-      if (response.redirected) {
-        await sleep(timeout)
-        continue
-      }
+      try {
+        const thumbnailsUrl = url + timestamp()
+        const response = await fetch(thumbnailsUrl)
+        if (response.redirected) {
+          await sleep(timeout)
+          continue
+        }
 
-      if (hostname === 'localhost') {
-        return thumbnailsUrl
-      }
+        if (hostname === 'localhost') {
+          return thumbnailsUrl
+        }
 
-      const buffer = await response.arrayBuffer()
-      await writeFile(`${thumbnailsPath}/${username}.jpg`, Buffer.from(buffer))
-      return `${hostname}/thumbnails/${username}.jpg${timestamp()}`
+        const buffer = await response.arrayBuffer()
+        await writeFile(`${thumbnailsPath}/${username}.jpg`, Buffer.from(buffer))
+        return `${hostname}/thumbnails/${username}.jpg${timestamp()}`
+      } catch {
+        console.log(`fetch-thumbnail error: ${url}`)
+      }
     }
   }
 
