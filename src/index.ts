@@ -14,7 +14,13 @@ import { AuthService } from './twitch/auth.service.js'
 import { ChatService } from './twitch/chat.service.js'
 import { EventSubService } from './twitch/eventsub.service.js'
 
-const bot = new Bot(env.BOT_TOKEN)
+const bot = new Bot(env.BOT_TOKEN, {
+  client: {
+    buildUrl(_root, token, method) {
+      return `${env.TG_PROXY_URL}/bot${token}/${method}`
+    },
+  }
+})
 
 const authService = new AuthService(databaseTokens)
 await authService.init()

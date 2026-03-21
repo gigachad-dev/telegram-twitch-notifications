@@ -6,6 +6,7 @@ if (process.env['NODE_ENV'] === 'development') {
 }
 
 export const env = cleanEnv(process.env, {
+  TG_PROXY_URL: str(),
   BOT_TOKEN: str(),
   BOT_OWNER_ID: num(),
   CHAT_ID: num(),
