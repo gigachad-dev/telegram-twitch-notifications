@@ -17,7 +17,7 @@ import { EventSubService } from './twitch/eventsub.service.js'
 const bot = new Bot(env.BOT_TOKEN, {
   client: {
     buildUrl(_root, token, method) {
-      return `${env.TG_PROXY_URL}/bot${token}/${method}`
+      return `${env.TG_PROXY_URL}bot${token}/${method}`
     },
   }
 })
