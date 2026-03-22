@@ -213,7 +213,7 @@ export class EventSubService {
     channelEntity: Channel
   ): Promise<void> {
     const thumbnailUrl = await fetchThumbnailUrl(
-      env.SERVER_HOSTNAME,
+      `${env.IMAGE_PROXY_URL}${env.SERVER_HOSTNAME}`,
       channelInfo.name
     )
 

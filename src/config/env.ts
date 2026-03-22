@@ -1,11 +1,11 @@
 import { cleanEnv, num, str } from 'envalid'
 import { envPath } from './paths.js'
+import { config } from 'dotenv'
 
-if (process.env['NODE_ENV'] === 'development') {
-  (await import('dotenv')).config({ path: envPath })
-}
+config({ path: envPath })
 
 export const env = cleanEnv(process.env, {
+  IMAGE_PROXY_URL: str(),
   TG_PROXY_URL: str(),
   BOT_TOKEN: str(),
   BOT_OWNER_ID: num(),
