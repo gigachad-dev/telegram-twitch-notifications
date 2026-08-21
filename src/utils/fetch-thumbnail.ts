@@ -34,7 +34,10 @@ export async function fetchThumbnailUrl(
         }
 
         const buffer = await response.arrayBuffer()
-        await writeFile(`${thumbnailsPath}/${username}.jpg`, Buffer.from(buffer))
+        await writeFile(
+          `${thumbnailsPath}/${username}.jpg`,
+          Buffer.from(buffer)
+        )
         return `${hostname}/thumbnails/${username}.jpg${timestamp()}`
       } catch {
         console.log(`fetch-thumbnail error: ${url}`)

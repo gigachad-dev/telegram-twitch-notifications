@@ -14,12 +14,27 @@ import { AuthService } from './twitch/auth.service.js'
 import { ChatService } from './twitch/chat.service.js'
 import { EventSubService } from './twitch/eventsub.service.js'
 
-const bot = new Bot(env.BOT_TOKEN, {
-  client: {
-    buildUrl(_root, token, method) {
-      return `${env.TG_PROXY_URL}bot${token}/${method}`
-    },
+function telegramClientOptions() {
+  const proxy = env.BOT_PROXY_URL
+  if (!proxy) return
+
+  let apiRoot = proxy.replace(/\/$/, '')
+  if (apiRoot.endsWith('/bot')) {
+    apiRoot = apiRoot.slice(0, -4)
   }
+
+  return {
+    apiRoot,
+    fetch: globalThis.fetch.bind(globalThis),
+    timeoutSeconds: 20,
+    baseFetchConfig: {
+      compress: false
+    }
+  }
+}
+
+const bot = new Bot(env.BOT_TOKEN, {
+  client: telegramClientOptions()
 })
 
 const authService = new AuthService(databaseTokens)
